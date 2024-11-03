@@ -1,20 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BottomNavigation, BottomNavigationAction, Drawer, IconButton, List, ListItem, ListItemIcon, ListItemText } from '@mui/material';
+import { BottomNavigation, BottomNavigationAction, Drawer, IconButton, List, ListItem, ListItemIcon, ListItemText, Badge } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AddIcon from '@mui/icons-material/Add';
 import UpdateIcon from '@mui/icons-material/Update';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import HistoryIcon from '@mui/icons-material/History';
-import NewReleasesIcon from '@mui/icons-material/NewReleases'; // New icon for "New Request"
+import NewReleasesIcon from '@mui/icons-material/NewReleases';
+import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { auth } from '../../firebaseConfig';
+import { auth, db } from '../../firebaseConfig';
 import { signOut } from 'firebase/auth';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { useTheme, useMediaQuery } from '@mui/material';
 
 const NavBar = () => {
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const [pendingCount, setPendingCount] = useState(0); // State to store pending requests count
     const navigate = useNavigate();
     const location = useLocation();
     const theme = useTheme();
@@ -27,7 +30,8 @@ const NavBar = () => {
         '/admin-dashboard/update-equipment': 2,
         '/admin-dashboard/add-user': 3,
         '/admin-dashboard/history': 4,
-        '/admin-dashboard/new-request': 5, // Add path for new request
+        '/admin-dashboard/new-request': 5,
+        '/admin-dashboard/scan-qr-code': 6, // New route for QR code scanning
     };
 
     // Function to calculate the selected index based on the exact current path
@@ -48,6 +52,19 @@ const NavBar = () => {
     useEffect(() => {
         setSelectedIndex(getSelectedIndex());
     }, [location.pathname]);
+
+    useEffect(() => {
+        // Set up Firestore listener for "Pending" requests count
+        const requestsRef = collection(db, 'equipmentRequests'); // Collection name is "equipmentRequests"
+        const pendingQuery = query(requestsRef, where('status', '==', 'Pending')); // Query for "Pending" status
+
+        const unsubscribe = onSnapshot(pendingQuery, (snapshot) => {
+            setPendingCount(snapshot.size); // Update count based on snapshot size
+        });
+
+        // Clean up the listener on unmount
+        return () => unsubscribe();
+    }, []);
 
     const handleNavigationChange = (event, newValue) => {
         setSelectedIndex(newValue);
@@ -74,7 +91,8 @@ const NavBar = () => {
         { label: 'Update Equipment', icon: <UpdateIcon />, index: 2 },
         { label: 'Add User', icon: <PersonAddIcon />, index: 3 },
         { label: 'History', icon: <HistoryIcon />, index: 4 },
-        { label: 'New Request', icon: <NewReleasesIcon />, index: 5 }, // New request button
+        { label: 'New Request', icon: <NewReleasesIcon />, index: 5 },
+        { label: 'Scan QR Code', icon: <QrCodeScannerIcon />, index: 6 }, // New "Scan QR Code" item
         { label: 'Log Out', icon: <LogoutIcon />, action: handleLogout, color: 'error' },
     ];
 
@@ -113,7 +131,13 @@ const NavBar = () => {
                                     onClick={item.action || (() => handleNavigationChange(null, item.index))}
                                 >
                                     <ListItemIcon sx={{ color: item.color || 'inherit' }}>
-                                        {item.icon}
+                                        {item.index === 5 ? (
+                                            <Badge badgeContent={pendingCount} color="error">
+                                                {item.icon}
+                                            </Badge>
+                                        ) : (
+                                            item.icon
+                                        )}
                                     </ListItemIcon>
                                     <ListItemText primary={item.label} />
                                 </ListItem>
@@ -140,7 +164,16 @@ const NavBar = () => {
                         <BottomNavigationAction
                             key={item.index}
                             label={item.label}
-                            icon={item.icon}
+                            icon={
+                                item.index === 5 ? (
+                                    <Badge badgeContent={pendingCount} color="error">
+                                        {item.icon}
+                                    </Badge>
+                                ) : (
+                                    item.icon
+                                )
+                            }
+                            onClick={item.index === 6 ? () => navigate('/admin-dashboard/scan-qr-code') : null}
                         />
                     ))}
                     <BottomNavigationAction
@@ -148,7 +181,7 @@ const NavBar = () => {
                         icon={<LogoutIcon />}
                         onClick={handleLogout}
                         sx={{
-                            color: 'red' // Sets the icon and label color to red
+                            color: 'red'
                         }}
                     />
                 </BottomNavigation>

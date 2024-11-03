@@ -10,7 +10,7 @@ import ViewEquipmentDetailsPage from '../../AdminCrud/UpdaterEquipment/ViewEquip
 import UpdateSpecificEquipmentPage from '../../AdminCrud/UpdaterEquipment/UpdateSpecificEquipmentPage';
 import RequestsPage from '../Requests/RequestsPage'
 import DashboardPage from './DashboardPage';
-
+import  QrScanner  from '../QrScanner/QrScanner';
 import EquipmentTypePieChart from '../Charts/EquipmentTypePieChart'
 import "./AdminDashboard.css";
 
@@ -32,6 +32,7 @@ const AdminDashboard = () => {
                     <Route path="update-equipment/view-equipment/:equipmentId" element={<ViewEquipmentDetailsPage />} /> 
                     <Route path="update-equipment/update-equipment/:equipmentId" element={<UpdateSpecificEquipmentPage />} /> 
                     <Route path="new-request" element={<RequestsPage />} /> 
+                    <Route path="scan-qr-code" element={<QrScanner />} /> 
                 </Routes>
             </div>
         </div>

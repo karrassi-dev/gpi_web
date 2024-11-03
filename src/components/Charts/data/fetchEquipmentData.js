@@ -1,4 +1,5 @@
 // src/components/Charts/data/fetchEquipmentData.js
+
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
 

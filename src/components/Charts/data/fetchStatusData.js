@@ -1,8 +1,15 @@
-import { collection, getDocs } from 'firebase/firestore';
+// src/components/Charts/data/fetchStatusData.js
+
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
 
-const fetchStatusData = async () => {
-    const querySnapshot = await getDocs(collection(db, 'equipmentRequests'));
+const fetchStatusData = async (typeFilter = null) => {
+    let q = collection(db, 'equipmentRequests');
+    if (typeFilter) {
+        q = query(q, where('equipmentType', '==', typeFilter));
+    }
+
+    const querySnapshot = await getDocs(q);
     const statusData = {};
 
     querySnapshot.forEach((doc) => {

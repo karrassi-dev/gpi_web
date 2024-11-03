@@ -10,15 +10,27 @@ const StatusBarChart = ({ data }) => {
     const labels = Object.keys(data);
     const values = Object.values(data);
 
-    // Default to a message if there's no data
+    // Assign specific colors for each status
+    const backgroundColors = labels.map(label => {
+        if (label === 'Approved') return 'rgba(76, 175, 80, 0.6)'; // Green for Approved
+        if (label === 'Pending') return '#FF6384'; // Yellow for Pending
+        return 'rgba(33, 150, 243, 0.6)'; // Default color for other statuses
+    });
+
+    const borderColors = labels.map(label => {
+        if (label === 'Approved') return 'rgba(76, 175, 80, 1)'; // Green border for Approved
+        if (label === 'Pending') return '#FF6384'; // Yellow border for Pending
+        return 'rgba(33, 150, 243, 1)'; // Default color for other statuses
+    });
+
     const chartData = {
         labels: labels.length > 0 ? labels : ['No Data'],
         datasets: [
             {
                 label: 'Count',
                 data: values.length > 0 ? values : [0],
-                backgroundColor: 'rgba(33, 150, 243, 0.6)',
-                borderColor: 'rgba(33, 150, 243, 1)',
+                backgroundColor: backgroundColors,
+                borderColor: borderColors,
                 borderWidth: 1,
             },
         ],
@@ -31,7 +43,7 @@ const StatusBarChart = ({ data }) => {
             legend: { display: false },
             tooltip: {
                 callbacks: {
-                    label: (tooltipItem) => `${tooltipItem.raw} ${tooltipItem.dataset.label}`, // More informative tooltip
+                    label: (tooltipItem) => `${tooltipItem.raw} ${tooltipItem.dataset.label}`,
                 },
             },
         },
@@ -43,20 +55,16 @@ const StatusBarChart = ({ data }) => {
             y: {
                 beginAtZero: true,
                 title: { display: true, text: 'Count', color: '#333', font: { weight: 'bold' } },
-                // ticks: { color: '#333', font: { size: 12 } },
             },
         },
     };
 
     return (
         <Paper elevation={3} sx={{ padding: 2, height: 250, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', borderRadius: '8px' }}>
-            {/* <Typography variant="h6" align="center" gutterBottom>
-                Status Distribution
-            </Typography> */}
-                <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+            <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
                 <Bar data={chartData} options={options} />
             </Box>
-</Paper>
+        </Paper>
     );
 };
 

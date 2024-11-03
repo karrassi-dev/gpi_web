@@ -3,7 +3,7 @@
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
 
-export const fetchData = async () => {
+export const fetchDashboardData = async () => {
     const equipmentRequests = await getDocs(collection(db, 'equipmentRequests'));
     const data = { equipmentTypeCounts: {}, statusCounts: {}, requesterCounts: {}, requestsOverTime: {} };
 
@@ -22,7 +22,7 @@ export const fetchData = async () => {
         const requester = request.requester || 'Unknown';
         data.requesterCounts[requester] = (data.requesterCounts[requester] || 0) + 1;
 
-        // Process requestsOverTime (you may need to adjust this for time-series data)
+        // Process requestsOverTime (time-series data can be added if needed)
     });
 
     return data;

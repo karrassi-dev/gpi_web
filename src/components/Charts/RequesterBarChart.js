@@ -1,55 +1,32 @@
-import React, { useEffect, useState } from 'react';
+// src/components/Charts/RequesterBarChart.js
+
+import React from 'react';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
-import { Dialog, IconButton, Typography, Box } from '@mui/material';
-import FullscreenIcon from '@mui/icons-material/Fullscreen';
-import CloseIcon from '@mui/icons-material/Close';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../../firebaseConfig'; // Make sure your firebase config is set up correctly
+import { Box, Typography } from '@mui/material';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const RequesterBarChart = () => {
-    const [data, setData] = useState({});
-    const [emails, setEmails] = useState([]);
-    const [isFullscreen, setIsFullscreen] = useState(false);
+const RequesterBarChart = ({ data }) => {
+    const emails = Object.keys(data);
+    const requestCounts = Object.values(data);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            const querySnapshot = await getDocs(collection(db, 'equipmentRequests'));
-            const requestCounts = {};
-            const requestEmails = [];
+    // Define a color palette for the bars
+    const colors = [
+        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
+        '#7C4DFF', '#00E676', '#FF3D00', '#304FFE', '#FFD700', '#ADFF2F'
+    ];
 
-            querySnapshot.forEach((doc) => {
-                const email = doc.data().email; // Get the email from the document
-                if (requestCounts[email]) {
-                    requestCounts[email] += 1; // Increment count
-                } else {
-                    requestCounts[email] = 1; // Initialize count
-                    requestEmails.push(email); // Store unique email
-                }
-            });
-
-            setData(requestCounts);
-            setEmails(requestEmails);
-        };
-
-        fetchData();
-    }, []);
-
-    const topRequesters = Object.entries(data)
-        .sort(([, countA], [, countB]) => countB - countA)
-        .slice(0, 4);
-
-    const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'];
+    // Dynamically assign colors, looping through the color array if needed
+    const backgroundColors = emails.map((_, index) => colors[index % colors.length]);
 
     const chartData = {
-        labels: topRequesters.map(([email]) => email),
+        labels: emails,
         datasets: [
             {
-                label: 'Requests',
-                data: topRequesters.map(([, count]) => count),
-                backgroundColor: colors,
+                label: 'Number of Requests',
+                data: requestCounts,
+                backgroundColor: backgroundColors,
                 borderWidth: 1,
             },
         ],
@@ -65,25 +42,19 @@ const RequesterBarChart = () => {
                 },
             },
         },
+        scales: {
+            x: { title: { display: true, text: 'Requester Email' } },
+            y: { title: { display: true, text: 'Request Count' }, beginAtZero: true },
+        },
     };
 
     return (
-        <div style={{ textAlign: 'center', padding: '1rem' }}>
-            <IconButton onClick={() => setIsFullscreen(true)} title="Expand">
-                <FullscreenIcon />
-            </IconButton>
+        <Box sx={{ height: 300 }}>
+            <Typography variant="h6" align="center">
+                Top Requesters
+            </Typography>
             <Bar data={chartData} options={options} />
-            <Dialog open={isFullscreen} onClose={() => setIsFullscreen(false)} maxWidth="md" fullWidth>
-                <Box p={2}>
-                    <IconButton onClick={() => setIsFullscreen(false)} style={{ float: 'right' }}>
-                        <CloseIcon />
-                    </IconButton>
-                    <Box display="flex" justifyContent="center" mb={2}>
-                        <Bar data={chartData} options={options} />
-                    </Box>
-                </Box>
-            </Dialog>
-        </div>
+        </Box>
     );
 };
 
