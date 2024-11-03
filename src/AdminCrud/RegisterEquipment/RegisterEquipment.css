@@ -1,0 +1,195 @@
+/* RegisterEquipment.css */
+
+/* Main container */
+.register-equipment {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 30px 40px;
+    font-family: 'Roboto', sans-serif;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.1);
+    color: #333;
+}
+
+/* Heading styling */
+.register-equipment h1 {
+    text-align: center;
+    font-size: 1.8rem;
+    color: #333;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+/* Form styling */
+.equipment-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Label styling */
+.equipment-form label {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: #555;
+    margin-bottom: 5px;
+    display: block;
+}
+
+/* Input and select fields styling for larger screens */
+.equipment-form input[type="text"],
+.equipment-form input[type="email"],
+.equipment-form input[type="datetime-local"],
+.equipment-form select {
+    width: 600px; /* Fixed width on larger screens */
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    color: #333;
+    background-color: #f9f9f9;
+    transition: border 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Focus styles for input and select */
+.equipment-form input[type="text"]:focus,
+.equipment-form input[type="email"]:focus,
+.equipment-form input[type="datetime-local"]:focus,
+.equipment-form select:focus {
+    border-color: #6c63ff;
+    box-shadow: 0px 4px 10px rgba(108, 99, 255, 0.1);
+    background-color: #fff;
+    outline: none;
+}
+
+/* Button styling */
+.equipment-form button {
+    width: 600px; /* Fixed width on larger screens */
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    background-color: #6c63ff;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 10px;
+}
+
+.equipment-form button:hover {
+    background-color: #5b54e6;
+}
+
+.equipment-form button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* Checkbox label styling */
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+    color: #555;
+    font-weight: 500;
+}
+
+/* QR code section styling */
+.qr-section {
+    text-align: center;
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 12px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.qr-section #qrCode {
+    margin: 0 auto;
+    padding: 10px;
+    background-color: #fff;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+.qr-section button {
+    margin-top: 15px;
+    width: auto;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background-color: #6c63ff;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.qr-section button:hover {
+    background-color: #5b54e6;
+}
+
+/* Responsive Styles */
+
+/* For devices with a screen width below 768px (tablets and phones) */
+@media (max-width: 768px) {
+    .register-equipment {
+        padding: 20px;
+        max-width: 100%;
+    }
+
+    .equipment-form input[type="text"],
+    .equipment-form input[type="email"],
+    .equipment-form input[type="datetime-local"],
+    .equipment-form select,
+    .equipment-form button {
+        width: 100%; /* Full width for responsive view */
+        font-size: 0.9rem; /* Slightly smaller text for smaller screens */
+    }
+
+    .equipment-form button {
+        padding: 12px; /* Adjust button padding */
+    }
+
+    .qr-section button {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+}
+
+/* For devices with a screen width below 480px (small phones) */
+@media (max-width: 480px) {
+    .register-equipment {
+        padding: 15px;
+    }
+
+    .register-equipment h1 {
+        font-size: 1.5rem; /* Smaller title for mobile */
+    }
+
+    .equipment-form input[type="text"],
+    .equipment-form input[type="email"],
+    .equipment-form input[type="datetime-local"],
+    .equipment-form select,
+    .equipment-form button {
+        font-size: 0.85rem; /* Smaller text for small screens */
+    }
+
+    .equipment-form button {
+        padding: 10px;
+    }
+
+    .qr-section {
+        padding: 15px;
+    }
+
+    .qr-section button {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+}

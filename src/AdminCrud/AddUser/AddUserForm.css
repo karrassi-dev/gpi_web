@@ -1,0 +1,110 @@
+/* Main container */
+.add-user-form {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 30px 40px;
+    font-family: 'Roboto', sans-serif;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.1);
+    color: #333;
+}
+
+/* Heading styling */
+.add-user-form h1 {
+    text-align: center;
+    font-size: 1.8rem;
+    color: #333;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+/* Form styling */
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* TextField styling for larger screens */
+.form .MuiTextField-root {
+    width: 600px; /* Fixed width on larger screens */
+    font-size: 1rem;
+    color: #333;
+}
+
+/* Responsive Button Styling for .submitUser */
+.submitUser {
+    width: 600px; /* Fixed width on larger screens */
+    padding: 14px;
+    font-size: 1rem;
+    font-weight: bold;
+    background-color: #6c63ff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.submitUser:hover {
+    background-color: #5b54e6;
+}
+
+.submitUser:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* Responsive Design for Mobile Devices */
+
+/* For devices with a screen width below 768px (tablets and phones) */
+@media (max-width: 768px) {
+    .add-user-form {
+        padding: 20px;
+        max-width: 100%;
+    }
+
+    .form .MuiTextField-root,
+    .form button {
+        width: 100%; /* Full width for responsive view */
+        font-size: 0.9rem;
+    }
+
+    .form button {
+        padding: 12px; /* Adjust button padding */
+    }
+
+    /* Responsive styling for .submitUser */
+    .submitUser {
+        width: 100%; /* Full width for responsive view */
+        padding: 12px;
+        font-size: 0.9rem; /* Slightly smaller text for smaller screens */
+    }
+}
+
+/* For devices with a screen width below 480px (small phones) */
+@media (max-width: 480px) {
+    .add-user-form {
+        padding: 15px;
+    }
+
+    .add-user-form h1 {
+        font-size: 1.5rem; /* Smaller title for mobile */
+    }
+
+    .form .MuiTextField-root,
+    .form button {
+        font-size: 0.85rem; /* Smaller text for small screens */
+    }
+
+    .form button {
+        padding: 10px;
+    }
+    
+    /* Further responsive styling for .submitUser on small phones */
+    .submitUser {
+        padding: 10px;
+        font-size: 0.85rem; /* Smaller text for very small screens */
+    }
+}

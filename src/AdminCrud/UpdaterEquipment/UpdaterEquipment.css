@@ -1,0 +1,13 @@
+.custom-app-bar {
+    margin-top: 0;
+}
+
+@media (min-width: 600px) {
+    .custom-app-bar {
+        margin-top: 30px;
+    }
+
+    .custom-toolbar {
+        min-height: 64px;
+    }
+}
