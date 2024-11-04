@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Card, Typography, Grid, Avatar } from '@mui/material';
+import { Box, Card, Typography, Grid, Avatar, useMediaQuery } from '@mui/material';
 import { Sparklines, SparklinesLine, SparklinesSpots, SparklinesReferenceLine } from 'react-sparklines';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
@@ -11,6 +11,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db, auth } from '../../firebaseConfig';
 
 const DashboardCards = () => {
+    const isMobile = useMediaQuery('(max-width:600px)');
     const [totalRequests, setTotalRequests] = useState({ current: 0, trend: 0, trendData: [] });
     const [pendingRequests, setPendingRequests] = useState({ current: 0, trend: 0, trendData: [] });
     const [topDepartments, setTopDepartments] = useState([]);
@@ -154,7 +155,7 @@ const DashboardCards = () => {
             trendData: []
         },
         {
-            title: "you approved",
+            title: "You Approved",
             value: userApprovedRequests.current,
             icon: <EquipmentIcon />,
             iconColor: '#66BB6A',
@@ -167,9 +168,9 @@ const DashboardCards = () => {
     ];
 
     return (
-        <Grid container spacing={3}>
+        <Grid container spacing={isMobile ? 2 : 3} sx={{ paddingX: isMobile ? 1 : 3 }}>
             {cardData.map((card, index) => (
-                <Grid item xs={12} sm={6} md={3} key={index}>
+                <Grid item xs={12} sm={6} md={3} key={index} sx={{ marginBottom: isMobile ? 2 : 0 }}>
                     <Card sx={{
                         p: 2,
                         borderRadius: 2,
@@ -178,7 +179,7 @@ const DashboardCards = () => {
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'space-between',
-                        height: '100%',
+                        height: '90%',
                         transition: 'transform 0.3s',
                         '&:hover': { transform: 'scale(1.03)' }
                     }}>
