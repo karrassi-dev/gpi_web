@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+// src/components/Admin/ViewEquipmentDetailsPage.js
+
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { db } from '../../firebaseConfig';
 import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
@@ -11,7 +13,7 @@ import CryptoJS from 'crypto-js';
 const ENCRYPTION_KEY = 'S3cur3P@ssw0rd123!';
 const IV = '16-Bytes---IVKey';
 
-// Encryption helper to match Dart encryption setup
+// Encryption helper
 const encryptData = (data) => {
     const key = CryptoJS.enc.Utf8.parse(CryptoJS.MD5(ENCRYPTION_KEY).toString());
     const iv = CryptoJS.enc.Utf8.parse(IV);
@@ -40,6 +42,7 @@ const ViewEquipmentDetailsPage = () => {
     const { equipmentId } = useParams();
     const [equipmentData, setEquipmentData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const qrCodeRef = useRef(null);
 
     const requiredFields = [
         'start_time', 'end_time', 'email', 'name', 'type', 'user',
@@ -58,10 +61,8 @@ const ViewEquipmentDetailsPage = () => {
                     const docRef = querySnapshot.docs[0];
                     const data = docRef.data();
 
-                    // Filter data to include only the required fields
                     const filteredData = filterFields({ ...data, document_id: docRef.id }, requiredFields);
 
-                    // Encrypt filtered data if QR data is missing and save it in Firestore
                     if (!data.qr_data) {
                         const plainData = JSON.stringify(filteredData);
                         const encryptedQRData = encryptData(plainData);
@@ -96,7 +97,41 @@ const ViewEquipmentDetailsPage = () => {
     };
 
     const printQRCode = () => {
-        window.print();
+        const canvas = qrCodeRef.current;
+        if (canvas) {
+            const dataUrl = canvas.toDataURL('image/png');
+
+            // Generate a timestamp for the print title
+            const timestamp = new Date().toLocaleString().replace(/[/,:\s]/g, '-');
+            const printTitle = `${equipmentData?.name || 'Equipment'} - QR Code - ${timestamp}`;
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>${printTitle}</title>
+                        <style>
+                            body, html {
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+                                height: 100vh;
+                                margin: 0;
+                            }
+                            img {
+                                width: 288px; 
+                                height: 288px;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <img src="${dataUrl}" alt="QR Code" />
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+        }
     };
 
     if (loading) return <CircularProgress sx={{ marginTop: 5 }} />;
@@ -162,11 +197,12 @@ const ViewEquipmentDetailsPage = () => {
                         <QRCodeCanvas
                             id="qrcode"
                             value={equipmentData.qr_data || 'No QR data'}
-                            size={180}
+                            size={288}  // Set to 288x288 for exact match
                             bgColor="#ffffff"
                             fgColor="#000000"
                             level="H"
                             includeMargin
+                            ref={qrCodeRef}
                         />
                         <Box display="flex" gap={2} marginTop={2}>
                             <Button

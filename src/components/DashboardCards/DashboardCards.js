@@ -154,7 +154,7 @@ const DashboardCards = () => {
             trendData: []
         },
         {
-            title: "you Approved",
+            title: "you approved",
             value: userApprovedRequests.current,
             icon: <EquipmentIcon />,
             iconColor: '#66BB6A',
