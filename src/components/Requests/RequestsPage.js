@@ -1,4 +1,3 @@
-// src/components/Admin/RequestsPage.js
 import React, { useState, useEffect } from 'react';
 import {
     collection,
@@ -33,6 +32,7 @@ import {
     DialogContent,
     DialogTitle,
     Alert,
+    Pagination,
 } from '@mui/material';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
@@ -48,6 +48,8 @@ const RequestsPage = () => {
     const [availableEquipment, setAvailableEquipment] = useState([]);
     const [selectedEquipment, setSelectedEquipment] = useState('');
     const [assignmentSuccess, setAssignmentSuccess] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 25;
 
     const equipmentTypes = ['Imprimante', 'Avaya', 'Point d’access', 'Switch', 'DVR', 'TV', 'Scanner', 'Routeur', 'Balanceur', 'Standard Téléphonique', 'Data Show', 'Desktop', 'Laptop','laptop'];
 
@@ -67,17 +69,13 @@ const RequestsPage = () => {
             ...doc.data(),
         }));
     
-        // Enhanced filtering logic
         const filteredData = requestData.filter((request) => {
             const { isRead, isAssigned, equipmentType } = filters;
     
-            // Check if request matches each filter condition
-            const matchesReadStatus = 
-                isRead === null || request.isRead === isRead;
+            const matchesReadStatus = isRead === null || request.isRead === isRead;
             const matchesAssignedStatus = 
                 isAssigned === null || (request.isAssigned === isAssigned || (isAssigned === false && !request.isAssigned));
-            const matchesEquipmentType = 
-                equipmentType === null || request.equipmentType === equipmentType;
+            const matchesEquipmentType = equipmentType === null || request.equipmentType === equipmentType;
     
             return matchesReadStatus && matchesAssignedStatus && matchesEquipmentType;
         });
@@ -85,7 +83,6 @@ const RequestsPage = () => {
         setRequests(filteredData);
         setLoading(false);
     };
-    
 
     const toggleDateOrder = () => setDateDescending(!dateDescending);
 
@@ -117,7 +114,6 @@ const RequestsPage = () => {
     
         const now = Timestamp.now();
         try {
-            // Fetch a single document for the selected equipment
             const equipmentDoc = await getDoc(doc(db, 'equipment', selectedEquipment));
             const equipmentData = equipmentDoc.data();
             const previousUser = equipmentData?.user || 'No previous user';
@@ -126,7 +122,6 @@ const RequestsPage = () => {
             const requestData = selectedRequest;
             const site = requestData.site;
     
-            // Update the request with assignment details
             await updateDoc(doc(db, 'equipmentRequests', selectedRequest.id), {
                 assignedEquipment: selectedEquipment,
                 assignedEquipmentDetails: {
@@ -141,7 +136,6 @@ const RequestsPage = () => {
                 isRead: true,
             });
     
-            // Update equipment collection
             await updateDoc(doc(db, 'equipment', selectedEquipment), {
                 user: requestData.utilisateur,
                 department: requestData.department,
@@ -150,13 +144,12 @@ const RequestsPage = () => {
                 lastAssignedDate: now,
             });
     
-            // Store previous user history if last assignment exists
             if (lastAssignedDate) {
                 const durationInDays = now.toDate().getDate() - lastAssignedDate.toDate().getDate();
                 await setDoc(
                     doc(db, 'HistoryOfEquipment', equipmentData.serial_number),
                     {
-                        assignments: arrayUnion({  // Use arrayUnion directly
+                        assignments: arrayUnion({
                             user: previousUser,
                             department: equipmentData.department,
                             admin: previousAdmin,
@@ -170,12 +163,21 @@ const RequestsPage = () => {
     
             setAssignDialogOpen(false);
             setAssignmentSuccess(true);
-            fetchRequests(); // Refresh requests
-            setTimeout(() => setAssignmentSuccess(false), 3000); // Hide success message after 3 seconds
+            fetchRequests();
+            setTimeout(() => setAssignmentSuccess(false), 3000);
         } catch (error) {
             console.error("Error assigning equipment:", error);
         }
     };
+
+    const handlePageChange = (event, page) => {
+        setCurrentPage(page);
+    };
+
+    const paginatedRequests = requests.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
 
     return (
         <Box sx={{ padding: { xs: 2, md: 4 } }}>
@@ -241,41 +243,51 @@ const RequestsPage = () => {
                     <CircularProgress />
                 </Box>
             ) : (
-                <Grid container spacing={3}>
-                    {requests.map((request) => (
-                        <Grid item xs={12} sm={6} md={4} key={request.id}>
-                            <Card sx={{ borderRadius: 2, boxShadow: '0px 8px 15px rgba(0, 0, 0, 0.2)' }}>
-                                <CardContent>
-                                    <Typography variant="h6" color="primary.main">
-                                        {request.name || 'Unnamed Request'}
-                                    </Typography>
-                                    <Typography variant="body2" color="textSecondary">
-                                        Status: <strong>{request.status || 'Pending'}</strong>
-                                    </Typography>
-                                    <Typography variant="body2">
-                                        Requested on: {new Date(request.requestDate.seconds * 1000).toLocaleDateString()}
-                                    </Typography>
-                                    <Typography variant="body2">User: {request.utilisateur}</Typography>
-                                    <Typography variant="body2">Type: {request.equipmentType}</Typography>
-                                </CardContent>
-                                <CardActions sx={{ justifyContent: 'center' }}>
-                                    <Button
-                                        variant="contained"
-                                        color={request.isAssigned ? 'success' : 'primary'}
-                                        onClick={() => handleAssignDialogOpen(request)}
-                                        disabled={request.isAssigned}
-                                        sx={{ borderRadius: 2, width: '90%' }}
-                                    >
-                                        {request.isAssigned ? 'Assigned' : 'Assign Equipment'}
-                                    </Button>
-                                </CardActions>
-                            </Card>
-                        </Grid>
-                    ))}
-                </Grid>
+                <>
+                    <Grid container spacing={3}>
+                        {paginatedRequests.map((request) => (
+                            <Grid item xs={12} sm={6} md={4} key={request.id}>
+                                <Card sx={{ borderRadius: 2, boxShadow: '0px 8px 15px rgba(0, 0, 0, 0.2)' }}>
+                                    <CardContent>
+                                        <Typography variant="h6" color="primary.main">
+                                            {request.name || 'Unnamed Request'}
+                                        </Typography>
+                                        <Typography variant="body2" color="textSecondary">
+                                            Status: <strong>{request.status || 'Pending'}</strong>
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            Requested on: {new Date(request.requestDate.seconds * 1000).toLocaleDateString()}
+                                        </Typography>
+                                        <Typography variant="body2">User: {request.utilisateur}</Typography>
+                                        <Typography variant="body2">Type: {request.equipmentType}</Typography>
+                                    </CardContent>
+                                    <CardActions sx={{ justifyContent: 'center' }}>
+                                        <Button
+                                            variant="contained"
+                                            color={request.isAssigned ? 'success' : 'primary'}
+                                            onClick={() => handleAssignDialogOpen(request)}
+                                            disabled={request.isAssigned}
+                                            sx={{ borderRadius: 2, width: '90%' }}
+                                        >
+                                            {request.isAssigned ? 'Assigned' : 'Assign Equipment'}
+                                        </Button>
+                                    </CardActions>
+                                </Card>
+                            </Grid>
+                        ))}
+                    </Grid>
+
+                    <Box display="flex" justifyContent="center" mt={3}>
+                        <Pagination
+                            count={Math.ceil(requests.length / itemsPerPage)}
+                            page={currentPage}
+                            onChange={handlePageChange}
+                            color="primary"
+                        />
+                    </Box>
+                </>
             )}
 
-            {/* Assignment Dialog */}
             <Dialog open={assignDialogOpen} onClose={() => setAssignDialogOpen(false)}>
                 <DialogTitle>Assign Equipment</DialogTitle>
                 <DialogContent>
@@ -326,11 +338,12 @@ const RequestsPage = () => {
                 </DialogActions>
             </Dialog>
 
-            {/* Success Alert */}
             {assignmentSuccess && (
                 <Alert severity="success" sx={{ mt: 2 }}>
                     Equipment assigned successfully!
                 </Alert>
+
+                
             )}
         </Box>
     );
