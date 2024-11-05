@@ -38,7 +38,7 @@ function App() {
           } else {
             setIsAuthenticated(false);
           }
-          setLoading(false); // Set loading to false after auth state is determined
+          setLoading(false); 
         });
         return unsubscribe;
       })

@@ -91,9 +91,9 @@ const Login = () => {
           {loading ? "Logging in..." : "Login"}
         </button>
       </form>
-      <p className="signup-link">
+      {/* <p className="signup-link">
         Don't have an account? <a href="/signup">Sign Up</a>
-      </p>
+      </p> */}
     </div>
   );
 };

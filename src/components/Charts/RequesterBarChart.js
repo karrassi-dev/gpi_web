@@ -21,7 +21,7 @@ const RequesterBarChart = ({ data }) => {
         '#7C4DFF', '#00E676', '#FF3D00', '#304FFE', '#FFD700', '#ADFF2F'
     ];
 
-    // Dynamically assign colors, looping through the color array if needed
+
     const backgroundColors = emails.map((_, index) => colors[index % colors.length]);
 
     const chartData = {
