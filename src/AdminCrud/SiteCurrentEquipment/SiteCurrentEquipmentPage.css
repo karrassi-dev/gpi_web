@@ -1,0 +1,38 @@
+SiteCurrentEquipmentPage.css .equipment-container {
+    padding: 20px;
+}
+
+.equipment-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 12px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.equipment-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+.loading-container {
+    display: flex;
+    justify-content: center;
+    margin: 20px;
+}
+
+/* Dropdown Styling */
+.MuiFormControl-root {
+    margin-top: 15px;
+}
+
+.MuiSelect-select {
+    padding: 10px;
+}
+
+.MuiMenuItem-root {
+    padding: 10px 20px;
+}
+
+/* Typography styling */
+.equipment-card .MuiTypography-root {
+    color: #333;
+}

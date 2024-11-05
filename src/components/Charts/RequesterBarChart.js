@@ -1,13 +1,17 @@
 // src/components/Charts/RequesterBarChart.js
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Paper, IconButton, Dialog } from '@mui/material';
+import FullscreenIcon from '@mui/icons-material/Fullscreen';
+import CloseIcon from '@mui/icons-material/Close';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const RequesterBarChart = ({ data }) => {
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
     const emails = Object.keys(data);
     const requestCounts = Object.values(data);
 
@@ -49,12 +53,36 @@ const RequesterBarChart = ({ data }) => {
     };
 
     return (
-        <Box sx={{ height: 300 }}>
-            <Typography variant="h6" align="center">
-                Top Requesters
-            </Typography>
-            <Bar data={chartData} options={options} />
-        </Box>
+        <Paper sx={{ height: 350 }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Typography variant="h6" gutterBottom>
+                    Top Requesters
+                </Typography>
+                <IconButton onClick={() => setIsFullscreen(!isFullscreen)}>
+                    {isFullscreen ? <CloseIcon /> : <FullscreenIcon />}
+                </IconButton>
+            </Box>
+            <Box sx={{ height: 350 }}>
+                <Bar data={chartData} options={options} />
+            </Box>
+                
+
+
+            {/* Fullscreen Dialog */}
+            <Dialog open={isFullscreen} onClose={() => setIsFullscreen(false)} maxWidth="md" fullWidth>
+                <Box p={2}>
+                    <IconButton onClick={() => setIsFullscreen(false)} style={{ float: 'right' }}>
+                        <CloseIcon />
+                    </IconButton>
+                    <Typography variant="h6" align="center" gutterBottom>
+                        Top Requesters
+                    </Typography>
+                    <Box display="flex" justifyContent="center" sx={{ height: '400px', marginTop: 2 }}>
+                        <Bar data={chartData} options={options} />
+                    </Box>
+                </Box>
+            </Dialog>
+        </Paper>
     );
 };
 

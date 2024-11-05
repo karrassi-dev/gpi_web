@@ -12,6 +12,8 @@ import RequestsPage from '../Requests/RequestsPage'
 import DashboardPage from './DashboardPage';
 import  QrScanner  from '../QrScanner/QrScanner';
 import EquipmentTypePieChart from '../Charts/EquipmentTypePieChart'
+import EquipmentCurrentUserPage from '../../AdminCrud/EquipmentCurrentUser/EquipmentCurrentUserPage'
+import SiteCurrentEquipmentPge from '../../AdminCrud/SiteCurrentEquipment/SiteCurrentEquipmentPge'
 import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
@@ -26,7 +28,9 @@ const AdminDashboard = () => {
 
                     <Route path="register-equipment" element={<RegisterEquipment />} />
                     <Route path="add-user" element={<AddUserForm />} />
-                    <Route path="history" element={<EquipmentHistoryPage />} /> 
+                    <Route path="history/equipment" element={<EquipmentHistoryPage />} /> 
+                    <Route path="history/current-users" element={<EquipmentCurrentUserPage />} /> 
+                    <Route path="history/current-site" element={<SiteCurrentEquipmentPge />} /> 
                     <Route path="history/equipment-history/:equipmentId" element={<EquipmentHistoryDetailPage />} />
                     <Route path="update-equipment" element={<UpdaterEquipment />} /> 
                     <Route path="update-equipment/view-equipment/:equipmentId" element={<ViewEquipmentDetailsPage />} /> 

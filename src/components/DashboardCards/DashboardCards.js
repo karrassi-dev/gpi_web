@@ -7,7 +7,7 @@ import EquipmentIcon from '@mui/icons-material/Build';
 import RequestIcon from '@mui/icons-material/Description';
 import PendingIcon from '@mui/icons-material/HourglassEmpty';
 import UserIcon from '@mui/icons-material/Person';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db, auth } from '../../firebaseConfig';
 
 const DashboardCards = () => {
@@ -17,26 +17,29 @@ const DashboardCards = () => {
     const [topDepartments, setTopDepartments] = useState([]);
     const [userApprovedRequests, setUserApprovedRequests] = useState({ current: 0, trend: 0, trendData: [] });
 
-    const currentMonth = new Date().getMonth() + 1; // JavaScript months are 0-based
+    const currentMonth = new Date().getMonth() + 1;
     const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
     const currentYear = new Date().getFullYear();
 
     useEffect(() => {
-        const fetchData = async () => {
-            const requestsRef = collection(db, 'equipmentRequests');
-            const currentUserEmail = auth.currentUser ? auth.currentUser.email : null;
-            if (!currentUserEmail) return;
+        const currentUserEmail = auth.currentUser ? auth.currentUser.email : null;
+        if (!currentUserEmail) return;
 
-            const allRequestsSnapshot = await getDocs(requestsRef);
-            const currentMonthRequests = allRequestsSnapshot.docs.filter(doc => {
-                const requestDate = doc.data().requestDate.toDate();
-                return requestDate.getMonth() + 1 === currentMonth && requestDate.getFullYear() === currentYear;
-            });
-            const lastMonthRequests = allRequestsSnapshot.docs.filter(doc => {
-                const requestDate = doc.data().requestDate.toDate();
-                return requestDate.getMonth() + 1 === lastMonth && requestDate.getFullYear() === currentYear;
-            });
-            
+        const requestsRef = collection(db, 'equipmentRequests');
+        const q = query(requestsRef);
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const allRequests = snapshot.docs.map(doc => ({
+                ...doc.data(),
+                requestDate: doc.data().requestDate.toDate(),
+                assignedDate: doc.data().assignedDate ? doc.data().assignedDate.toDate() : null,
+            }));
+
+            // Filter data for the current and last month
+            const currentMonthRequests = allRequests.filter(req => req.requestDate.getMonth() + 1 === currentMonth && req.requestDate.getFullYear() === currentYear);
+            const lastMonthRequests = allRequests.filter(req => req.requestDate.getMonth() + 1 === lastMonth && req.requestDate.getFullYear() === currentYear);
+
+            // Total Equipment Requests
             const currentRequestsCount = currentMonthRequests.length;
             const lastRequestsCount = lastMonthRequests.length;
             const trendPercentage = lastRequestsCount
@@ -48,23 +51,9 @@ const DashboardCards = () => {
                 trendData: lastRequestsCount ? [lastRequestsCount, currentRequestsCount] : []
             });
 
-            // 2. Pending Approvals for this month and trend compared to last month
-            const pendingRequestsSnapshot = allRequestsSnapshot.docs.filter(doc => {
-                const requestDate = doc.data().requestDate.toDate();
-                return (
-                    doc.data().status === 'Pending' &&
-                    requestDate.getMonth() + 1 === currentMonth &&
-                    requestDate.getFullYear() === currentYear
-                );
-            });
-            const lastMonthPendingRequestsSnapshot = allRequestsSnapshot.docs.filter(doc => {
-                const requestDate = doc.data().requestDate.toDate();
-                return (
-                    doc.data().status === 'Pending' &&
-                    requestDate.getMonth() + 1 === lastMonth &&
-                    requestDate.getFullYear() === currentYear
-                );
-            });
+            // Pending Requests
+            const pendingRequestsSnapshot = currentMonthRequests.filter(req => req.status === 'Pending');
+            const lastMonthPendingRequestsSnapshot = lastMonthRequests.filter(req => req.status === 'Pending');
             setPendingRequests({
                 current: pendingRequestsSnapshot.length,
                 trend: lastMonthPendingRequestsSnapshot.length
@@ -73,10 +62,10 @@ const DashboardCards = () => {
                 trendData: lastMonthPendingRequestsSnapshot.length ? [lastMonthPendingRequestsSnapshot.length, pendingRequestsSnapshot.length] : []
             });
 
-            // 3. Top 3 Departments with the highest demand this month
+            // Top 3 Departments by Requests
             const departmentCounts = {};
-            currentMonthRequests.forEach(doc => {
-                const department = doc.data().department;
+            currentMonthRequests.forEach(req => {
+                const department = req.department;
                 if (department) {
                     departmentCounts[department] = (departmentCounts[department] || 0) + 1;
                 }
@@ -87,27 +76,9 @@ const DashboardCards = () => {
                 .map(([department, count]) => ({ department, count }));
             setTopDepartments(sortedDepartments);
 
-            // 4. User-Approved Equipment for this month compared to last month
-            const userApprovedSnapshot = allRequestsSnapshot.docs.filter(doc => {
-                const assignedDate = doc.data().assignedDate ? doc.data().assignedDate.toDate() : null;
-                return (
-                    doc.data().status === 'Approved' &&
-                    doc.data().assignedBy === currentUserEmail &&
-                    assignedDate &&
-                    assignedDate.getMonth() + 1 === currentMonth &&
-                    assignedDate.getFullYear() === currentYear
-                );
-            });
-            const lastMonthUserApprovedSnapshot = allRequestsSnapshot.docs.filter(doc => {
-                const assignedDate = doc.data().assignedDate ? doc.data().assignedDate.toDate() : null;
-                return (
-                    doc.data().status === 'Approved' &&
-                    doc.data().assignedBy === currentUserEmail &&
-                    assignedDate &&
-                    assignedDate.getMonth() + 1 === lastMonth &&
-                    assignedDate.getFullYear() === currentYear
-                );
-            });
+            // User-Approved Requests
+            const userApprovedSnapshot = currentMonthRequests.filter(req => req.status === 'Approved' && req.assignedBy === currentUserEmail);
+            const lastMonthUserApprovedSnapshot = lastMonthRequests.filter(req => req.status === 'Approved' && req.assignedBy === currentUserEmail);
             setUserApprovedRequests({
                 current: userApprovedSnapshot.length,
                 trend: lastMonthUserApprovedSnapshot.length
@@ -115,9 +86,10 @@ const DashboardCards = () => {
                     : 0,
                 trendData: lastMonthUserApprovedSnapshot.length ? [lastMonthUserApprovedSnapshot.length, userApprovedSnapshot.length] : []
             });
-        };
+        });
 
-        fetchData();
+        // Cleanup the listener on component unmount
+        return () => unsubscribe();
     }, []);
 
     const cardData = [
@@ -203,9 +175,9 @@ const DashboardCards = () => {
                         <Box mt={1}>
                             {card.trendData && card.trendData.length > 0 && (
                                 <Sparklines data={card.trendData} limit={2} height={30}>
-                                    <SparklinesLine color={card.trend >= 0 ? "green" : "red"} style={{ fillOpacity: 0.3 }} />
+                                    <SparklinesLine color={card.trend >= 0 ? "green" : "red"} style={{ fillOpacity: 0.3, strokeWidth: 2 }} />
                                     <SparklinesReferenceLine type="avg" />
-                                    <SparklinesSpots />
+                                    <SparklinesSpots style={{ fill: card.trend >= 0 ? "green" : "red" }} />
                                 </Sparklines>
                             )}
                         </Box>

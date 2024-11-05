@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BottomNavigation, BottomNavigationAction, Drawer, IconButton, List, ListItem, ListItemIcon, ListItemText, Badge } from '@mui/material';
+import { BottomNavigation, BottomNavigationAction, Drawer, IconButton, List, ListItem, ListItemIcon, ListItemText, Badge, Menu, MenuItem } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AddIcon from '@mui/icons-material/Add';
@@ -17,34 +17,24 @@ import { useTheme, useMediaQuery } from '@mui/material';
 
 const NavBar = () => {
     const [drawerOpen, setDrawerOpen] = useState(false);
-    const [pendingCount, setPendingCount] = useState(0); // State to store pending requests count
+    const [pendingCount, setPendingCount] = useState(0);
+    const [historyAnchorEl, setHistoryAnchorEl] = useState(null);
     const navigate = useNavigate();
     const location = useLocation();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-    // Define path mappings to indices
     const pathToIndex = {
         '/admin-dashboard': 0,
         '/admin-dashboard/register-equipment': 1,
         '/admin-dashboard/update-equipment': 2,
         '/admin-dashboard/add-user': 3,
-        '/admin-dashboard/history': 4,
         '/admin-dashboard/new-request': 5,
-        '/admin-dashboard/scan-qr-code': 6, // New route for QR code scanning
+        '/admin-dashboard/scan-qr-code': 6,
     };
 
-    // Function to calculate the selected index based on the exact current path
     const getSelectedIndex = () => {
-        if (location.pathname === '/admin-dashboard') {
-            return pathToIndex['/admin-dashboard'];
-        }
-
-        const matchingPath = Object.keys(pathToIndex).find(
-            (path) => location.pathname.startsWith(path) && path !== '/admin-dashboard'
-        );
-
-        return matchingPath ? pathToIndex[matchingPath] : 0;
+        return pathToIndex[location.pathname] ?? 0;
     };
 
     const [selectedIndex, setSelectedIndex] = useState(getSelectedIndex);
@@ -54,24 +44,22 @@ const NavBar = () => {
     }, [location.pathname]);
 
     useEffect(() => {
-        // Set up Firestore listener for "Pending" requests count
-        const requestsRef = collection(db, 'equipmentRequests'); // Collection name is "equipmentRequests"
-        const pendingQuery = query(requestsRef, where('status', '==', 'Pending')); // Query for "Pending" status
+        const requestsRef = collection(db, 'equipmentRequests');
+        const pendingQuery = query(requestsRef, where('status', '==', 'Pending'));
 
         const unsubscribe = onSnapshot(pendingQuery, (snapshot) => {
-            setPendingCount(snapshot.size); // Update count based on snapshot size
+            setPendingCount(snapshot.size);
         });
 
-        // Clean up the listener on unmount
         return () => unsubscribe();
     }, []);
 
     const handleNavigationChange = (event, newValue) => {
-        setSelectedIndex(newValue);
-        setDrawerOpen(false); // Close the drawer if on mobile
-
         const path = Object.keys(pathToIndex).find((key) => pathToIndex[key] === newValue);
-        if (path) navigate(path);
+        if (path) {
+            setSelectedIndex(newValue);
+            navigate(path);
+        }
     };
 
     const handleLogout = () => {
@@ -85,20 +73,31 @@ const NavBar = () => {
             });
     };
 
+    const handleHistoryHover = (event) => {
+        setHistoryAnchorEl(event.currentTarget);
+    };
+
+    const handleHistoryClose = () => {
+        setHistoryAnchorEl(null);
+    };
+
+    const handleHistoryOptionClick = (path) => {
+        navigate(path);
+        handleHistoryClose();
+    };
+
     const navItems = [
         { label: 'Dashboard', icon: <DashboardIcon />, index: 0 },
         { label: 'Register Equipment', icon: <AddIcon />, index: 1 },
         { label: 'Update Equipment', icon: <UpdateIcon />, index: 2 },
         { label: 'Add User', icon: <PersonAddIcon />, index: 3 },
-        { label: 'History', icon: <HistoryIcon />, index: 4 },
         { label: 'New Request', icon: <NewReleasesIcon />, index: 5 },
-        { label: 'Scan QR Code', icon: <QrCodeScannerIcon />, index: 6 }, // New "Scan QR Code" item
+        { label: 'Scan QR Code', icon: <QrCodeScannerIcon />, index: 6 },
         { label: 'Log Out', icon: <LogoutIcon />, action: handleLogout, color: 'error' },
     ];
 
     return (
         <>
-            {/* Mobile Drawer */}
             {isMobile ? (
                 <>
                     <IconButton
@@ -117,16 +116,12 @@ const NavBar = () => {
                     >
                         <MenuIcon />
                     </IconButton>
-                    <Drawer
-                        anchor="left"
-                        open={drawerOpen}
-                        onClose={() => setDrawerOpen(false)}
-                    >
+                    <Drawer anchor="left" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
                         <List>
-                            {navItems.map((item, index) => (
+                            {navItems.map((item) => (
                                 <ListItem
                                     button
-                                    key={index}
+                                    key={item.index}
                                     selected={selectedIndex === item.index}
                                     onClick={item.action || (() => handleNavigationChange(null, item.index))}
                                 >
@@ -142,14 +137,35 @@ const NavBar = () => {
                                     <ListItemText primary={item.label} />
                                 </ListItem>
                             ))}
+                            <ListItem button onMouseEnter={handleHistoryHover}>
+                                <ListItemIcon>
+                                    <HistoryIcon />
+                                </ListItemIcon>
+                                <ListItemText primary="History" />
+                            </ListItem>
                         </List>
                     </Drawer>
+                    <Menu
+                        anchorEl={historyAnchorEl}
+                        open={Boolean(historyAnchorEl)}
+                        onClose={handleHistoryClose}
+                        onMouseLeave={handleHistoryClose}
+                    >
+                        <MenuItem onClick={() => handleHistoryOptionClick('/admin-dashboard/history/equipment')}>
+                            Equipment History
+                        </MenuItem>
+                        <MenuItem onClick={() => handleHistoryOptionClick('/admin-dashboard/history/current-users')}>
+                            Current Users
+                        </MenuItem>
+                        <MenuItem onClick={() => handleHistoryOptionClick('/admin-dashboard/history/current-site')}>
+                            Current Site
+                        </MenuItem>
+                    </Menu>
                 </>
             ) : (
-                // Desktop BottomNavigation
                 <BottomNavigation
                     value={selectedIndex}
-                    onChange={handleNavigationChange}
+                    onChange={(event, newValue) => handleNavigationChange(event, newValue)}
                     showLabels
                     sx={{
                         position: 'fixed',
@@ -173,17 +189,36 @@ const NavBar = () => {
                                     item.icon
                                 )
                             }
-                            onClick={item.index === 6 ? () => navigate('/admin-dashboard/scan-qr-code') : null}
+                            value={item.index}
                         />
                     ))}
+                    <BottomNavigationAction
+                        label="History"
+                        icon={<HistoryIcon />}
+                        onMouseEnter={handleHistoryHover}
+                    />
                     <BottomNavigationAction
                         label="Log Out"
                         icon={<LogoutIcon />}
                         onClick={handleLogout}
-                        sx={{
-                            color: 'red'
-                        }}
+                        sx={{ color: 'red' }}
                     />
+                    <Menu
+                        anchorEl={historyAnchorEl}
+                        open={Boolean(historyAnchorEl)}
+                        onClose={handleHistoryClose}
+                        onMouseLeave={handleHistoryClose}
+                    >
+                        <MenuItem onClick={() => handleHistoryOptionClick('/admin-dashboard/history/equipment')}>
+                            Equipment History
+                        </MenuItem>
+                        <MenuItem onClick={() => handleHistoryOptionClick('/admin-dashboard/history/current-users')}>
+                            Current Users
+                        </MenuItem>
+                        <MenuItem onClick={() => handleHistoryOptionClick('/admin-dashboard/history/current-site')}>
+                            Current Site
+                        </MenuItem>
+                    </Menu>
                 </BottomNavigation>
             )}
         </>
