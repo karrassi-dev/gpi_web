@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Card, Typography, Grid, Avatar, useMediaQuery } from '@mui/material';
+import { Box, Card, Typography, Grid, Avatar, Snackbar, Alert, useMediaQuery } from '@mui/material';
 import { Sparklines, SparklinesLine, SparklinesSpots, SparklinesReferenceLine } from 'react-sparklines';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
@@ -16,6 +16,7 @@ const DashboardCards = () => {
     const [pendingRequests, setPendingRequests] = useState({ current: 0, trend: 0, trendData: [] });
     const [topDepartments, setTopDepartments] = useState([]);
     const [userApprovedRequests, setUserApprovedRequests] = useState({ current: 0, trend: 0, trendData: [] });
+    const [showAlert, setShowAlert] = useState(false); // For new pending request alert
 
     const currentMonth = new Date().getMonth() + 1;
     const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
@@ -54,6 +55,12 @@ const DashboardCards = () => {
             // Pending Requests
             const pendingRequestsSnapshot = currentMonthRequests.filter(req => req.status === 'Pending');
             const lastMonthPendingRequestsSnapshot = lastMonthRequests.filter(req => req.status === 'Pending');
+            
+            // Show alert if there’s a new pending request
+            if (pendingRequestsSnapshot.length > pendingRequests.current) {
+                setShowAlert(true);
+            }
+            
             setPendingRequests({
                 current: pendingRequestsSnapshot.length,
                 trend: lastMonthPendingRequestsSnapshot.length
@@ -90,7 +97,10 @@ const DashboardCards = () => {
 
         // Cleanup the listener on component unmount
         return () => unsubscribe();
-    }, []);
+    }, [pendingRequests.current]);
+
+    // Close alert
+    const handleCloseAlert = () => setShowAlert(false);
 
     const cardData = [
         {
@@ -140,51 +150,60 @@ const DashboardCards = () => {
     ];
 
     return (
-        <Grid container spacing={isMobile ? 2 : 3} sx={{ paddingX: isMobile ? 1 : 3 }}>
-            {cardData.map((card, index) => (
-                <Grid item xs={12} sm={6} md={3} key={index} sx={{ marginBottom: isMobile ? 2 : 0 }}>
-                    <Card sx={{
-                        p: 2,
-                        borderRadius: 2,
-                        boxShadow: 3,
-                        bgcolor: 'background.paper',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        height: '90%',
-                        transition: 'transform 0.3s',
-                        '&:hover': { transform: 'scale(1.03)' }
-                    }}>
-                        <Box display="flex" alignItems="center" mb={2}>
-                            <Avatar sx={{ bgcolor: card.iconColor, mr: 2 }}>
-                                {card.icon}
-                            </Avatar>
-                            <Typography color="textSecondary" variant="h6">
-                                {card.title}
+        <>
+            {/* Snackbar for new pending request alert */}
+            <Snackbar open={showAlert} autoHideDuration={6000} onClose={handleCloseAlert}>
+                <Alert onClose={handleCloseAlert} severity="info" sx={{ width: '100%' }}>
+                    New pending request received!
+                </Alert>
+            </Snackbar>
+
+            <Grid container spacing={isMobile ? 2 : 3} sx={{ paddingX: isMobile ? 1 : 3 }}>
+                {cardData.map((card, index) => (
+                    <Grid item xs={12} sm={6} md={3} key={index} sx={{ marginBottom: isMobile ? 2 : 0 }}>
+                        <Card sx={{
+                            p: 2,
+                            borderRadius: 2,
+                            boxShadow: 3,
+                            bgcolor: 'background.paper',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            height: '90%',
+                            transition: 'transform 0.3s',
+                            '&:hover': { transform: 'scale(1.03)' }
+                        }}>
+                            <Box display="flex" alignItems="center" mb={2}>
+                                <Avatar sx={{ bgcolor: card.iconColor, mr: 2 }}>
+                                    {card.icon}
+                                </Avatar>
+                                <Typography color="textSecondary" variant="h6">
+                                    {card.title}
+                                </Typography>
+                            </Box>
+                            <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                                {card.value}
                             </Typography>
-                        </Box>
-                        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                            {card.value}
-                        </Typography>
-                        <Box display="flex" alignItems="center" mt={2}>
-                            {card.trendIcon}
-                            <Typography variant="body2" color={card.trendColor} sx={{ ml: 0.5 }}>
-                                {card.trend} Since last month
-                            </Typography>
-                        </Box>
-                        <Box mt={1}>
-                            {card.trendData && card.trendData.length > 0 && (
-                                <Sparklines data={card.trendData} limit={2} height={30}>
-                                    <SparklinesLine color={card.trend >= 0 ? "green" : "red"} style={{ fillOpacity: 0.3, strokeWidth: 2 }} />
-                                    <SparklinesReferenceLine type="avg" />
-                                    <SparklinesSpots style={{ fill: card.trend >= 0 ? "green" : "red" }} />
-                                </Sparklines>
-                            )}
-                        </Box>
-                    </Card>
-                </Grid>
-            ))}
-        </Grid>
+                            <Box display="flex" alignItems="center" mt={2}>
+                                {card.trendIcon}
+                                <Typography variant="body2" color={card.trendColor} sx={{ ml: 0.5 }}>
+                                    {card.trend} Since last month
+                                </Typography>
+                            </Box>
+                            <Box mt={1}>
+                                {card.trendData && card.trendData.length > 0 && (
+                                    <Sparklines data={card.trendData} limit={2} height={30}>
+                                        <SparklinesLine color={card.trend >= 0 ? "green" : "red"} style={{ fillOpacity: 0.3, strokeWidth: 2 }} />
+                                        <SparklinesReferenceLine type="avg" />
+                                        <SparklinesSpots style={{ fill: card.trend >= 0 ? "green" : "red" }} />
+                                    </Sparklines>
+                                )}
+                            </Box>
+                        </Card>
+                    </Grid>
+                ))}
+            </Grid>
+        </>
     );
 };
 

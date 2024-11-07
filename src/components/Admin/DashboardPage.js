@@ -1,5 +1,3 @@
-// src/components/Admin/DashboardPage.js
-
 import React, { useEffect, useState } from 'react';
 import { fetchDashboardData } from '../Charts/data/fetchDashboardData';
 import fetchEquipmentData from '../Charts/data/fetchEquipmentData';
@@ -9,8 +7,9 @@ import StatusBarChart from '../Charts/StatusBarChart';
 import RequesterBarChart from '../Charts/RequesterBarChart';
 import RequestsChart from '../Charts/RequestsChart';
 import DashboardCards from '../DashboardCards/DashboardCards';
-import { Box, Typography, Paper, Grid } from '@mui/material';
-import { collection, getDocs } from 'firebase/firestore';
+import EquipmentMap from '../EquipmentMap/EquipmentMapPage';
+import { Box, Typography, Paper, Grid, Snackbar, Alert } from '@mui/material';
+import { collection, query, onSnapshot, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 
 const DashboardPage = () => {
@@ -18,6 +17,9 @@ const DashboardPage = () => {
     const [statusData, setStatusData] = useState({});
     const [requesterData, setRequesterData] = useState({});
     const [selectedType, setSelectedType] = useState(null);
+    const [showNotification, setShowNotification] = useState(false); // Notification state
+    const [notificationMessage, setNotificationMessage] = useState(''); // Notification message
+    const [existingRequestIds, setExistingRequestIds] = useState(new Set()); // Track existing request IDs
 
     // Fetch initial data for all charts
     const fetchInitialData = async () => {
@@ -29,17 +31,42 @@ const DashboardPage = () => {
         setRequesterData(dashboardData.requesterCounts); // Load full requester data
     };
 
-    // Fetch filtered data based on selected type, or reset if type is null
+    // Real-time listener for new pending requests
+    useEffect(() => {
+        const q = query(
+            collection(db, 'equipmentRequests'),
+            where('status', '==', 'Pending')
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === 'added') {
+                    const requestData = change.doc.data();
+                    const requestId = change.doc.id;
+
+                    // Show notification only for new requests
+                    if (!existingRequestIds.has(requestId)) {
+                        setExistingRequestIds((prev) => new Set(prev).add(requestId));
+                        setNotificationMessage(`New request from ${requestData.name} for ${requestData.equipmentType}`);
+                        setShowNotification(true);
+                    }
+                }
+            });
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+    // Fetch filtered data based on selected type
     const fetchFilteredData = async (type) => {
         if (!type) {
-            fetchInitialData(); // Reset to initial data if no type is selected
+            fetchInitialData();
             return;
         }
 
         const filteredStatusData = await fetchStatusData(type);
         setStatusData(filteredStatusData);
 
-        // Filter requester data by selected type
         const filteredRequesterData = {};
         const equipmentRequests = await getDocs(collection(db, 'equipmentRequests'));
         equipmentRequests.forEach(doc => {
@@ -50,7 +77,7 @@ const DashboardPage = () => {
             }
         });
 
-        setRequesterData(filteredRequesterData); // Set filtered requester data
+        setRequesterData(filteredRequesterData);
     };
 
     useEffect(() => {
@@ -58,8 +85,12 @@ const DashboardPage = () => {
     }, []);
 
     useEffect(() => {
-        fetchFilteredData(selectedType); // Fetch data based on selected type
+        fetchFilteredData(selectedType);
     }, [selectedType]);
+
+    const handleCloseNotification = () => {
+        setShowNotification(false);
+    };
 
     return (
         <Box sx={{ padding: 4 }}>
@@ -67,8 +98,20 @@ const DashboardPage = () => {
                 Admin Dashboard
             </Typography>
 
-            {/* Dashboard Cards at the top */}
-            <Box mb={10}> {/* Adds space below DashboardCards */}
+            {/* Notification Snackbar */}
+            <Snackbar
+                open={showNotification}
+                autoHideDuration={6000}
+                onClose={handleCloseNotification}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Alert onClose={handleCloseNotification} severity="info" sx={{ width: '100%' }}>
+                    {notificationMessage}
+                </Alert>
+            </Snackbar>
+
+            {/* Dashboard Cards */}
+            <Box mb={10}>
                 <DashboardCards />
             </Box>
 
@@ -82,7 +125,7 @@ const DashboardPage = () => {
                         {Object.keys(chartData).length > 0 ? (
                             <EquipmentTypePieChart 
                                 data={chartData} 
-                                onSectionTapped={(type) => setSelectedType(type)} // Update selected type
+                                onSectionTapped={(type) => setSelectedType(type)}
                             />
                         ) : (
                             <Typography variant="body2" color="textSecondary">
@@ -109,22 +152,26 @@ const DashboardPage = () => {
 
                 <Grid item xs={12} sm={6} md={3}>
                     <Paper elevation={3} sx={{ padding: 2, textAlign: 'center', borderRadius: '8px', height: 350 }}>
-                        
-                        {Object.keys(requesterData).length > 0 ? (
-                            <RequesterBarChart data={requesterData} />
-                        ) : (
-                            <Typography variant="body2" color="textSecondary">
-                                {selectedType ? "No data available for the selected type" : "Loading requester data..."}
-                            </Typography>
-                        )}
+                        <RequesterBarChart data={requesterData} />
                     </Paper>
                 </Grid>
 
                 <Grid item xs={12} sm={6} md={6}>
-                    
-                        
+                    <Paper ffd>
                         <RequestsChart />
+                    </Paper>
+                </Grid>
 
+                {/* Equipment Map */}
+                <Grid item xs={12}>
+                    <Paper elevation={3} sx={{ padding: 2, textAlign: 'center', borderRadius: '8px' }}>
+                        <Typography variant="h6" gutterBottom>
+                            Equipment Location Map
+                        </Typography>
+                        <Box sx={{ height: '500px', width: '100%' }}>
+                            <EquipmentMap />
+                        </Box>
+                    </Paper>
                 </Grid>
             </Grid>
         </Box>
