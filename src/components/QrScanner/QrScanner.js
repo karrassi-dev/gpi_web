@@ -6,7 +6,7 @@ import UploadIcon from '@mui/icons-material/Upload';
 import EditIcon from '@mui/icons-material/Edit';
 import { useNavigate } from 'react-router-dom';
 
-// Encryption parameters
+// Encryption constants
 const ENCRYPTION_KEY = CryptoJS.MD5("S3cur3P@ssw0rd123!").toString();
 const IV = CryptoJS.enc.Utf8.parse("16-Bytes---IVKey");
 
@@ -56,13 +56,22 @@ const QrScanner = () => {
 
     const decryptData = (encryptedText) => {
         try {
+            console.log("Attempting to decrypt:", encryptedText); // Log the encrypted text
+
             const bytes = CryptoJS.AES.decrypt(encryptedText, CryptoJS.enc.Utf8.parse(ENCRYPTION_KEY), {
                 iv: IV,
                 mode: CryptoJS.mode.CBC,
                 padding: CryptoJS.pad.Pkcs7,
             });
+
             const decryptedText = bytes.toString(CryptoJS.enc.Utf8);
-            return decryptedText ? JSON.parse(decryptedText) : "Failed to decrypt data";
+
+            // Check if decryption was successful
+            if (!decryptedText) {
+                throw new Error("Failed to decrypt data");
+            }
+
+            return JSON.parse(decryptedText);
         } catch (error) {
             console.error("Decryption failed:", error);
             return "Error: Decryption failed";

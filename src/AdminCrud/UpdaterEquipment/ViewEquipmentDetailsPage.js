@@ -1,5 +1,3 @@
-// src/components/Admin/ViewEquipmentDetailsPage.js
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { db } from '../../firebaseConfig';
@@ -13,7 +11,7 @@ import CryptoJS from 'crypto-js';
 const ENCRYPTION_KEY = 'S3cur3P@ssw0rd123!';
 const IV = '16-Bytes---IVKey';
 
-// Encryption helper
+// Encrypt data function
 const encryptData = (data) => {
     const key = CryptoJS.enc.Utf8.parse(CryptoJS.MD5(ENCRYPTION_KEY).toString());
     const iv = CryptoJS.enc.Utf8.parse(IV);
@@ -47,7 +45,7 @@ const ViewEquipmentDetailsPage = () => {
     const requiredFields = [
         'start_time', 'end_time', 'email', 'name', 'type', 'user',
         'brand', 'reference', 'serial_number', 'processor', 'os', 'ram',
-        'wireless_mouse', 'document_id'
+        'wireless_mouse', 'document_id', 'storage' // Include storage
     ];
 
     useEffect(() => {
@@ -63,15 +61,17 @@ const ViewEquipmentDetailsPage = () => {
 
                     const filteredData = filterFields({ ...data, document_id: docRef.id }, requiredFields);
 
-                    if (!data.qr_data) {
-                        const plainData = JSON.stringify(filteredData);
-                        const encryptedQRData = encryptData(plainData);
+                    // Check if the stored QR data matches the current data
+                    const currentPlainData = JSON.stringify(filteredData);
+                    const encryptedQRData = encryptData(currentPlainData);
 
+                    if (data.qr_data !== encryptedQRData) {
+                        // Update the QR data if it has changed
                         await updateDoc(doc(db, 'equipment', docRef.id), { qr_data: encryptedQRData });
-                        setEquipmentData({ ...filteredData, qr_data: encryptedQRData });
-                    } else {
-                        setEquipmentData({ ...filteredData, qr_data: data.qr_data });
                     }
+
+                    // Set state with encrypted QR data
+                    setEquipmentData({ ...filteredData, qr_data: encryptedQRData });
                 } else {
                     setEquipmentData(null);
                 }
@@ -101,7 +101,6 @@ const ViewEquipmentDetailsPage = () => {
         if (canvas) {
             const dataUrl = canvas.toDataURL('image/png');
 
-            // Generate a timestamp for the print title
             const timestamp = new Date().toLocaleString().replace(/[/,:\s]/g, '-');
             const printTitle = `${equipmentData?.name || 'Equipment'} - QR Code - ${timestamp}`;
 

@@ -35,7 +35,8 @@ const filterFields = (data, equipmentId) => ({
     os: data.os || "N/A",
     ram: data.ram || "N/A",
     wireless_mouse: data.wireless_mouse || "N/A",
-    document_id: equipmentId
+    document_id: equipmentId,
+    storage: data.storage
 });
 
 const UpdateSpecificEquipmentPage = () => {
@@ -141,6 +142,7 @@ const UpdateSpecificEquipmentPage = () => {
                     <TextField name="processor" label="Processor" value={equipmentData.processor || ''} onChange={handleChange} fullWidth margin="normal" />
                     <TextField name="os" label="Operating System" value={equipmentData.os || ''} onChange={handleChange} fullWidth margin="normal" />
                     <TextField name="ram" label="RAM" value={equipmentData.ram || ''} onChange={handleChange} fullWidth margin="normal" />
+                    <TextField name="storage" label="Storage" value={equipmentData.storage || ''} onChange={handleChange} fullWidth margin="normal" />
                     <TextField name="wireless_mouse" label="Wireless Mouse" value={equipmentData.wireless_mouse || ''} onChange={handleChange} fullWidth margin="normal" />
                     <TextField name="external_screen" label="External Screen" value={equipmentData.external_screen || ''} onChange={handleChange} fullWidth margin="normal" />
                     <TextField name="screen_brand" label="Screen Brand" value={equipmentData.screen_brand || ''} onChange={handleChange} fullWidth margin="normal" />

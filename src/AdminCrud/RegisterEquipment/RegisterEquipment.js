@@ -1,10 +1,22 @@
-// RegisterEquipment.js
 import React, { useState } from "react";
 import { db } from "../../firebaseConfig";
-import { addDoc, collection, serverTimestamp, updateDoc, doc } from "firebase/firestore";
+import { setDoc, doc, serverTimestamp } from "firebase/firestore";
 import { QRCodeCanvas } from "qrcode.react";
 import html2canvas from "html2canvas";
+import CryptoJS from "crypto-js";
 import "./RegisterEquipment.css";
+
+// Encryption constants
+const ENCRYPTION_KEY = 'S3cur3P@ssw0rd123!';
+const IV = '16-Bytes---IVKey';
+
+// Function to encrypt data using AES with CBC mode
+const encryptData = (data) => {
+    const key = CryptoJS.enc.Utf8.parse(CryptoJS.MD5(ENCRYPTION_KEY).toString());
+    const iv = CryptoJS.enc.Utf8.parse(IV);
+    const encrypted = CryptoJS.AES.encrypt(data, key, { iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
+    return encrypted.toString();
+};
 
 const RegisterEquipment = () => {
     const [qrData, setQrData] = useState(null);
@@ -20,13 +32,14 @@ const RegisterEquipment = () => {
         user: "",
         brand: "",
         reference: "",
-        serialNumber: "",
+        serial_number: "", // This will be used as the document ID
         processor: "",
         os: "",
         ram: "",
+        storage: "", // New storage field
         externalScreen: "",
         screenBrand: "",
-        screenSerialNumber: "",
+        screenserial_number: "",
         inventoryNumberEcr: "",
         status: "",
         inventoryNumberLpt: "",
@@ -47,12 +60,12 @@ const RegisterEquipment = () => {
 
     const registerEquipment = async () => {
         // Check required fields
-        const requiredFields = ["startTime", "endTime", "email", "name", "type", "user", "brand", "reference", "serialNumber", "processor", "os", "ram", "status", "inventoryNumberLpt"];
+        const requiredFields = ["startTime", "endTime", "email", "name", "type", "user", "brand", "reference", "serial_number", "processor", "os", "ram", "storage", "status", "inventoryNumberLpt"];
         const missingRequiredField = requiredFields.some((field) => !formData[field]);
         
         // Conditionally check additional fields
         const missingAdditionalFields = isAdditionalFieldsVisible &&
-            (!formData.externalScreen || !formData.screenBrand || !formData.screenSerialNumber || !formData.inventoryNumberEcr);
+            (!formData.externalScreen || !formData.screenBrand || !formData.screenserial_number || !formData.inventoryNumberEcr);
 
         if (missingRequiredField || missingAdditionalFields) {
             alert("Please fill in all required fields.");
@@ -61,15 +74,22 @@ const RegisterEquipment = () => {
         
         setIsLoading(true);
         try {
-            const docRef = await addDoc(collection(db, "equipment"), {
-                ...formData,
-                wirelessMouse: isWirelessMouse ? "Yes" : "No",
-                timestamp: serverTimestamp(),
-            });
-            const equipmentData = { ...formData, documentId: docRef.id };
+            // Prepare equipment data
+            const equipmentData = { ...formData, documentId: formData.serial_number, storage: formData.storage, wirelessMouse: isWirelessMouse ? "Yes" : "No" };
+
+            // Generate and encrypt the QR data
             const generatedQRData = JSON.stringify(equipmentData);
-            await updateDoc(doc(db, "equipment", docRef.id), { qr_data: generatedQRData });
-            setQrData(generatedQRData);
+            const encryptedQRData = encryptData(generatedQRData);
+
+            // Save to Firestore with the encrypted QR data
+            const docRef = doc(db, "equipment", formData.serial_number);
+            await setDoc(docRef, {
+                ...equipmentData,
+                timestamp: serverTimestamp(),
+                qr_data: encryptedQRData, // Store encrypted QR data
+            });
+            
+            setQrData(encryptedQRData); // Set QR data to display the encrypted QR code
 
             // Clear the form fields after successful save
             setFormData({
@@ -81,13 +101,14 @@ const RegisterEquipment = () => {
                 user: "",
                 brand: "",
                 reference: "",
-                serialNumber: "",
+                serial_number: "", // Reset serial_number field
                 processor: "",
                 os: "",
                 ram: "",
+                storage: "", // Reset storage field
                 externalScreen: "",
                 screenBrand: "",
-                screenSerialNumber: "",
+                screenserial_number: "",
                 inventoryNumberEcr: "",
                 status: "",
                 inventoryNumberLpt: "",
@@ -147,10 +168,11 @@ const RegisterEquipment = () => {
                     <input type="text" name="user" placeholder="User" onChange={handleChange} required />
                     <input type="text" name="brand" placeholder="Brand" onChange={handleChange} required />
                     <input type="text" name="reference" placeholder="Reference" onChange={handleChange} required />
-                    <input type="text" name="serialNumber" placeholder="Serial Number" onChange={handleChange} required />
+                    <input type="text" name="serial_number" placeholder="Serial Number" onChange={handleChange} required />
                     <input type="text" name="processor" placeholder="Processor" onChange={handleChange} required />
                     <input type="text" name="os" placeholder="Operating System" onChange={handleChange} required />
                     <input type="text" name="ram" placeholder="RAM (GB)" onChange={handleChange} required />
+                    <input type="text" name="storage" placeholder="Storage (GB)" onChange={handleChange} required /> {/* New storage field */}
 
                     <label className="checkbox-label">
                         <input type="checkbox" checked={isWirelessMouse} onChange={() => setIsWirelessMouse(!isWirelessMouse)} />
@@ -172,7 +194,7 @@ const RegisterEquipment = () => {
                         <>
                             <input type="text" name="externalScreen" placeholder="External Screen" onChange={handleChange} required />
                             <input type="text" name="screenBrand" placeholder="Screen Brand" onChange={handleChange} required />
-                            <input type="text" name="screenSerialNumber" placeholder="Screen Serial Number" onChange={handleChange} required />
+                            <input type="text" name="screenserial_number" placeholder="Screen Serial Number" onChange={handleChange} required />
                             <input type="text" name="inventoryNumberEcr" placeholder="Inventory Number ECR" onChange={handleChange} required />
                         </>
                     )}

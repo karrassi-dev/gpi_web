@@ -83,6 +83,7 @@ const RequestsChart = () => {
     };
 
     const options = {
+        
         responsive: true,
         plugins: {
             legend: { display: true },
@@ -121,9 +122,9 @@ const RequestsChart = () => {
                     Weekly
                 </Button>
             </Box>
-            <Box sx={{ height: '250px', marginTop: 2 }}>
+            <Box sx={{ height: '250px', width: '100%', marginTop: 2,  }}>
                 {isMonthlyDataAvailable || isWeeklyDataAvailable ? (
-                    <Line data={data} options={options} />
+                    <Line  data={data} options={options} />
                 ) : (
                     <Typography variant="body2" color="textSecondary">
                         No data available for the selected timeframe.
