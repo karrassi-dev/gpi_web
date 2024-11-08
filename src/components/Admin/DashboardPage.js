@@ -17,9 +17,9 @@ const DashboardPage = () => {
     const [statusData, setStatusData] = useState({});
     const [requesterData, setRequesterData] = useState({});
     const [selectedType, setSelectedType] = useState(null);
-    const [showNotification, setShowNotification] = useState(false); // Notification state
-    const [notificationMessage, setNotificationMessage] = useState(''); // Notification message
-    const [existingRequestIds, setExistingRequestIds] = useState(new Set()); // Track existing request IDs
+    const [showNotification, setShowNotification] = useState(false); 
+    const [notificationMessage, setNotificationMessage] = useState(''); 
+    const [existingRequestIds, setExistingRequestIds] = useState(new Set());
 
     // Fetch initial data for all charts
     const fetchInitialData = async () => {
@@ -28,7 +28,7 @@ const DashboardPage = () => {
 
         setChartData(equipmentData);
         setStatusData(dashboardData.statusCounts);
-        setRequesterData(dashboardData.requesterCounts); // Load full requester data
+        setRequesterData(dashboardData.requesterCounts);
     };
 
     // Real-time listener for new pending requests

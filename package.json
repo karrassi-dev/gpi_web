@@ -19,6 +19,7 @@
     "firebase": "^11.0.1",
     "html2canvas": "^1.4.1",
     "html5-qrcode": "^2.3.8",
+    "jsqr": "^1.4.0",
     "leaflet": "^1.9.4",
     "qrcode-reader": "^1.0.4",
     "qrcode.react": "^4.1.0",

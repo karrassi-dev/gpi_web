@@ -39,7 +39,7 @@ const RegisterEquipment = () => {
         storage: "", // New storage field
         externalScreen: "",
         screenBrand: "",
-        screenserial_number: "",
+        screenSerialNumber: "",
         inventoryNumberEcr: "",
         status: "",
         inventoryNumberLpt: "",
@@ -65,7 +65,7 @@ const RegisterEquipment = () => {
         
         // Conditionally check additional fields
         const missingAdditionalFields = isAdditionalFieldsVisible &&
-            (!formData.externalScreen || !formData.screenBrand || !formData.screenserial_number || !formData.inventoryNumberEcr);
+            (!formData.externalScreen || !formData.screenBrand || !formData.screenSerialNumber || !formData.inventoryNumberEcr);
 
         if (missingRequiredField || missingAdditionalFields) {
             alert("Please fill in all required fields.");
@@ -80,6 +80,8 @@ const RegisterEquipment = () => {
             // Generate and encrypt the QR data
             const generatedQRData = JSON.stringify(equipmentData);
             const encryptedQRData = encryptData(generatedQRData);
+
+            console.log("Generated encrypted QR data:", encryptedQRData); // Log encrypted data
 
             // Save to Firestore with the encrypted QR data
             const docRef = doc(db, "equipment", formData.serial_number);
@@ -108,7 +110,7 @@ const RegisterEquipment = () => {
                 storage: "", // Reset storage field
                 externalScreen: "",
                 screenBrand: "",
-                screenserial_number: "",
+                screenSerialNumber: "",
                 inventoryNumberEcr: "",
                 status: "",
                 inventoryNumberLpt: "",
@@ -139,7 +141,7 @@ const RegisterEquipment = () => {
                 // QR Code Display Section
                 <div className="qr-section">
                     <div id="qrCode">
-                        <QRCodeCanvas value={qrData} size={200} />
+                        <QRCodeCanvas value={qrData} size={300} /> {/* Increased QR code size */}
                     </div>
                     <button onClick={downloadQRCode}>Download QR Code</button>
                 </div>
@@ -194,7 +196,7 @@ const RegisterEquipment = () => {
                         <>
                             <input type="text" name="externalScreen" placeholder="External Screen" onChange={handleChange} required />
                             <input type="text" name="screenBrand" placeholder="Screen Brand" onChange={handleChange} required />
-                            <input type="text" name="screenserial_number" placeholder="Screen Serial Number" onChange={handleChange} required />
+                            <input type="text" name="screenSerialNumber" placeholder="Screen Serial Number" onChange={handleChange} required />
                             <input type="text" name="inventoryNumberEcr" placeholder="Inventory Number ECR" onChange={handleChange} required />
                         </>
                     )}
