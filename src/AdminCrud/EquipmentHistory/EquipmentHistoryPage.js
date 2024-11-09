@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MenuItem, Button, TextField, CircularProgress, Box, Typography } from '@mui/material';
+import { MenuItem, Button, TextField, CircularProgress, Box, Typography, Autocomplete } from '@mui/material';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 
@@ -14,9 +14,11 @@ const EquipmentHistoryPage = () => {
     const [selectedType, setSelectedType] = useState('');
     const [selectedEquipmentId, setSelectedEquipmentId] = useState('');
     const [equipmentMap, setEquipmentMap] = useState({});
+    const [searchOptions, setSearchOptions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    // Fetch equipment list by type
     const fetchEquipmentList = async (type) => {
         setLoading(true);
         setError('');
@@ -38,6 +40,35 @@ const EquipmentHistoryPage = () => {
         }
     };
 
+    // Fetch all equipment for search field suggestions
+    const fetchAllEquipmentForSearch = async () => {
+        setLoading(true);
+        try {
+            const equipmentRef = collection(db, 'equipment');
+            const equipmentSnapshot = await getDocs(equipmentRef);
+
+            const searchList = [];
+            equipmentSnapshot.forEach((doc) => {
+                const data = doc.data();
+                searchList.push({
+                    id: doc.id,
+                    label: `${data.brand || 'Unknown Brand'} - ${data.serial_number}`,
+                    brand: data.brand,
+                    serial_number: data.serial_number
+                });
+            });
+            setSearchOptions(searchList);
+        } catch (err) {
+            console.error("Error fetching equipment for search:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchAllEquipmentForSearch();
+    }, []);
+
     const handleTypeChange = (event) => {
         const type = event.target.value;
         setSelectedType(type);
@@ -55,12 +86,41 @@ const EquipmentHistoryPage = () => {
         }
     };
 
+    // Dynamically filter options as the user types each letter
+    const filterOptions = (options, { inputValue }) => {
+        const normalizedInput = inputValue.toLowerCase();
+
+        // Find exact matches first
+        const exactMatches = options.filter((option) => 
+            (option.serial_number && option.serial_number.toLowerCase() === normalizedInput) ||
+            (option.brand && option.brand.toLowerCase() === normalizedInput)
+        );
+
+        // If exact matches are found, return only those
+        if (exactMatches.length > 0) {
+            return exactMatches;
+        }
+
+        // Otherwise, return partial matches
+        return options.filter((option) => 
+            (option.serial_number && option.serial_number.toLowerCase().includes(normalizedInput)) ||
+            (option.brand && option.brand.toLowerCase().includes(normalizedInput))
+        );
+    };
+
+    // Update selected equipment ID based on search selection
+    const handleSearchChange = (event, value) => {
+        setSelectedEquipmentId(value ? value.id : '');
+    };
+
     return (
         <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4, p: 2 }}>
             <Typography variant="h5" gutterBottom>
                 Equipment History
             </Typography>
             {error && <Typography color="error">{error}</Typography>}
+
+            {/* Dropdown for Equipment Type */}
             <TextField
                 select
                 label="Select Equipment Type"
@@ -75,6 +135,8 @@ const EquipmentHistoryPage = () => {
                     </MenuItem>
                 ))}
             </TextField>
+
+            {/* Dropdown for Equipment Brand based on selected type */}
             <TextField
                 select
                 label="Select Equipment by Brand"
@@ -90,6 +152,24 @@ const EquipmentHistoryPage = () => {
                     </MenuItem>
                 ))}
             </TextField>
+
+            {/* Separate Search Field for Brand or Serial Number */}
+            <Autocomplete
+                options={searchOptions}
+                getOptionLabel={(option) => option.label}
+                onChange={handleSearchChange}
+                filterOptions={filterOptions} // Custom filter function
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        label="Search by Brand or Serial Number"
+                        fullWidth
+                        margin="normal"
+                        disabled={loading}
+                    />
+                )}
+            />
+
             <Button
                 variant="contained"
                 color="primary"
