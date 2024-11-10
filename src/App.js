@@ -7,7 +7,7 @@ import Login from "./components/login/Login";
 import AdminDashboard from "./components/Admin/AdminDashboard";
 import EmployeeDashboard from "./components/Employe/EmployeeDashboard";
 import ProtectedRoute from "./ProtectedRoute";
-
+import NotFoundPage from "./components/NotFound/NotFoundPage";
 const AUTO_LOGOUT_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 function App() {
@@ -64,7 +64,11 @@ function App() {
           path="/employee-dashboard"
           element={<ProtectedRoute element={EmployeeDashboard} isAuthenticated={isAuthenticated} />}
         />
+
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
+
+      
     </Router>
   );
 }
