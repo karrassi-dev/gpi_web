@@ -69,14 +69,14 @@ const SiteCurrentEquipmentPage = () => {
                     console.error('Error fetching equipment data:', error);
                 }
                 setLoading(false);
-                setCurrentPage(1); // Reset to the first page when a new query is fetched
+                setCurrentPage(1); 
             }
         };
 
         fetchEquipment();
     }, [site, department]);
 
-    // Pagination handlers
+
     const handlePageChange = (event, value) => {
         setCurrentPage(value);
     };
@@ -157,6 +157,10 @@ const SiteCurrentEquipmentPage = () => {
                 </Grid>
             )}
 
+
+            {/* Display message if no equipment found */}
+
+            
             {site && !loading && equipmentList.length === 0 && (
                 <Typography
                     variant="body1"

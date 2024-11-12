@@ -51,7 +51,7 @@ const RequestsPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 25;
 
-    const equipmentTypes = ['Imprimante', 'Avaya', 'Point d’access', 'Switch', 'DVR', 'TV', 'Scanner', 'Routeur', 'Balanceur', 'Standard Téléphonique', 'Data Show', 'Desktop', 'Laptop','laptop'];
+    const equipmentTypes = ['Imprimante', 'Avaya', 'Point d’access', 'Switch', 'DVR', 'TV', 'Scanner', 'Routeur', 'Balanceur', 'Standard Téléphonique', 'Data Show', 'Desktop', 'Laptop','laptop','Notebook','VMware'];
 
     useEffect(() => {
         fetchRequests();
