@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip } from 'chart.js';
-import { Dialog, IconButton, Typography, Box } from '@mui/material';
+import { Dialog, IconButton, Typography, Box, Button } from '@mui/material';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -18,6 +18,7 @@ const EquipmentTypePieChart = ({ data, onSectionTapped }) => {
         '#7C4DFF', '#00E676', '#FF3D00', '#304FFE'
     ];
 
+    // Update chartData dynamically when a section is clicked
     const chartData = focusedIndex !== null
         ? {
             labels: [Object.keys(data)[focusedIndex]],
@@ -63,22 +64,15 @@ const EquipmentTypePieChart = ({ data, onSectionTapped }) => {
                 const index = elements[0].index;
                 setFocusedIndex(index);
                 const selectedType = chartData.labels[index];
-                onSectionTapped(selectedType);
+                onSectionTapped(selectedType); // Pass the selected type to the parent component
             }
         },
     };
 
-    const handleClickOutside = (event) => {
-        if (chartRef.current && !chartRef.current.contains(event.target)) {
-            setFocusedIndex(null); // Reset pie chart to show all segments
-            onSectionTapped(null); // Reset other charts to default
-        }
+    const handleReset = () => {
+        setFocusedIndex(null); // Reset pie chart to show all segments
+        onSectionTapped(null); // Reset other charts to default (show all equipment types)
     };
-
-    useEffect(() => {
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     return (
         <div style={{ textAlign: 'center', padding: '1rem' }} ref={chartRef}>
@@ -93,11 +87,23 @@ const EquipmentTypePieChart = ({ data, onSectionTapped }) => {
                             {selectedType}
                         </Typography>
                         <Typography variant="h4">
-                            {percentage}%
+                            100%
                         </Typography>
                     </Box>
                 )}
             </div>
+
+            {/* Reset Button */}
+            <Box mt={2}>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleReset}
+                    disabled={focusedIndex === null} // Disable if already showing default
+                >
+                    Reset Chart
+                </Button>
+            </Box>
 
             <Dialog open={isFullscreen} onClose={() => { setIsFullscreen(false); setShowColors(false); }} maxWidth="md" fullWidth>
                 <Box p={2}>

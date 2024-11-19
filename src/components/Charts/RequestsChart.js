@@ -10,10 +10,10 @@ import { db } from '../../firebaseConfig'; // Ensure your firebase config is set
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-const RequestsChart = () => {
+const RequestsChart = ({ selectedType }) => {
     const [chartData, setChartData] = useState({ monthly: {}, weekly: {} });
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [timeFrame, setTimeFrame] = useState('monthly'); // State to toggle between monthly and weekly
+    const [timeFrame, setTimeFrame] = useState('monthly');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -21,30 +21,31 @@ const RequestsChart = () => {
             const requestCounts = { monthly: {}, weekly: {} };
             const now = new Date();
 
-            // Initialize the request counts for the last year
             for (let i = 0; i < 12; i++) {
                 const monthYear = new Date(now.getFullYear(), now.getMonth() - i, 1);
                 const monthKey = `${monthYear.getMonth() + 1}-${monthYear.getFullYear()}`;
-                requestCounts.monthly[monthKey] = 0; // Start with 0 requests for each month
+                requestCounts.monthly[monthKey] = 0;
             }
 
-            // Weekly request counts
             for (let i = 0; i < 7; i++) {
                 const weekDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
                 const weekKey = `${weekDay.getDate()}-${weekDay.getMonth() + 1}-${weekDay.getFullYear()}`;
-                requestCounts.weekly[weekKey] = 0; // Start with 0 requests for each day of the week
+                requestCounts.weekly[weekKey] = 0;
             }
 
             querySnapshot.forEach((doc) => {
-                const requestDate = doc.data().requestDate.toDate(); // Adjust if necessary to get timestamp
-                const monthYear = `${requestDate.getMonth() + 1}-${requestDate.getFullYear()}`;
-                if (requestCounts.monthly[monthYear] !== undefined) {
-                    requestCounts.monthly[monthYear] += 1; // Increment count for monthly
-                }
+                const request = doc.data();
+                if (!selectedType || request.equipmentType === selectedType) { // Filter by type
+                    const requestDate = request.requestDate.toDate();
+                    const monthYear = `${requestDate.getMonth() + 1}-${requestDate.getFullYear()}`;
+                    if (requestCounts.monthly[monthYear] !== undefined) {
+                        requestCounts.monthly[monthYear] += 1;
+                    }
 
-                const weekKey = `${requestDate.getDate()}-${requestDate.getMonth() + 1}-${requestDate.getFullYear()}`;
-                if (requestCounts.weekly[weekKey] !== undefined) {
-                    requestCounts.weekly[weekKey] += 1; // Increment count for weekly
+                    const weekKey = `${requestDate.getDate()}-${requestDate.getMonth() + 1}-${requestDate.getFullYear()}`;
+                    if (requestCounts.weekly[weekKey] !== undefined) {
+                        requestCounts.weekly[weekKey] += 1;
+                    }
                 }
             });
 
@@ -52,19 +53,15 @@ const RequestsChart = () => {
         };
 
         fetchData();
-    }, []);
+    }, [selectedType]); // Re-fetch when selectedType changes
 
-    // Check if data exists for chart
-    const isMonthlyDataAvailable = Object.keys(chartData.monthly).length > 0;
-    const isWeeklyDataAvailable = Object.keys(chartData.weekly).length > 0;
+    const chartLabels = timeFrame === 'monthly'
+        ? Object.keys(chartData.monthly).reverse()
+        : Object.keys(chartData.weekly).reverse();
 
-    const chartLabels = timeFrame === 'monthly' 
-        ? Object.keys(chartData.monthly).reverse() // Reverse for older on left
-        : Object.keys(chartData.weekly).reverse();  // Reverse for older on left
-        
-    const chartValues = timeFrame === 'monthly' 
-        ? Object.values(chartData.monthly).reverse() // Reverse for older on left
-        : Object.values(chartData.weekly).reverse();  // Reverse for older on left
+    const chartValues = timeFrame === 'monthly'
+        ? Object.values(chartData.monthly).reverse()
+        : Object.values(chartData.weekly).reverse();
 
     const data = {
         labels: chartLabels,
@@ -82,28 +79,6 @@ const RequestsChart = () => {
         ],
     };
 
-    const options = {
-        
-        responsive: true,
-        plugins: {
-            legend: { display: true },
-            tooltip: {
-                callbacks: {
-                    label: (tooltipItem) => `${tooltipItem.label}: ${tooltipItem.raw}`,
-                },
-            },
-        },
-        scales: {
-            x: {
-                title: { display: true, text: timeFrame === 'monthly' ? 'Month-Year' : 'Date' },
-            },
-            y: {
-                beginAtZero: true,
-                title: { display: true, text: 'Request Count' },
-            },
-        },
-    };
-
     return (
         <Paper elevation={3} sx={{ padding: 2, borderRadius: '8px', width: '100%', height: 350 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -115,30 +90,49 @@ const RequestsChart = () => {
                 </IconButton>
             </Box>
             <Box display="flex" justifyContent="space-between" alignItems="center">
-                <Button variant={timeFrame === 'monthly' ? 'contained' : 'outlined'} onClick={() => setTimeFrame('monthly')}>
+                <Button
+                    variant={timeFrame === 'monthly' ? 'contained' : 'outlined'}
+                    onClick={() => setTimeFrame('monthly')}
+                >
                     Monthly
                 </Button>
-                <Button variant={timeFrame === 'weekly' ? 'contained' : 'outlined'} onClick={() => setTimeFrame('weekly')}>
+                <Button
+                    variant={timeFrame === 'weekly' ? 'contained' : 'outlined'}
+                    onClick={() => setTimeFrame('weekly')}
+                >
                     Weekly
                 </Button>
             </Box>
-            <Box sx={{ height: '250px', width: '100%', marginTop: 2,  }}>
-                {isMonthlyDataAvailable || isWeeklyDataAvailable ? (
-                    <Line  data={data} options={options} />
+            <Box sx={{ height: '250px', width: '100%', marginTop: 2 }}>
+                {Object.keys(chartData[timeFrame]).length > 0 ? (
+                    <Line data={data} options={{
+                        responsive: true,
+                        plugins: {
+                            legend: { display: true },
+                        },
+                        scales: {
+                            x: {
+                                title: { display: true, text: timeFrame === 'monthly' ? 'Month-Year' : 'Date' },
+                            },
+                            y: {
+                                beginAtZero: true,
+                                title: { display: true, text: 'Request Count' },
+                            },
+                        },
+                    }} />
                 ) : (
                     <Typography variant="body2" color="textSecondary">
                         No data available for the selected timeframe.
                     </Typography>
                 )}
             </Box>
-            {/* Fullscreen Mode */}
             <Dialog open={isFullscreen} onClose={() => setIsFullscreen(false)} maxWidth="md" fullWidth>
                 <Box p={2}>
                     <IconButton onClick={() => setIsFullscreen(false)} style={{ float: 'right' }}>
                         <CloseIcon />
                     </IconButton>
                     <Box display="flex" justifyContent="center" mb={2}>
-                        <Line data={data} options={options} />
+                        <Line data={data} />
                     </Box>
                 </Box>
             </Dialog>

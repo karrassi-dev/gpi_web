@@ -28,7 +28,7 @@ function App() {
       }
     };
 
-    // Set Firebase persistence and track authentication state
+
     setPersistence(auth, browserLocalPersistence)
       .then(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {

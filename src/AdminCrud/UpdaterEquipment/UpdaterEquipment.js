@@ -3,13 +3,23 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../firebaseConfig';
 import { collection, query, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
-import { TextField, Card, IconButton, List, ListItem, ListItemText, AppBar, Toolbar, Box, Pagination } from '@mui/material';
+import {
+    TextField,
+    Card,
+    CardContent,
+    IconButton,
+    List,
+    ListItem,
+    ListItemText,
+    AppBar,
+    Toolbar,
+    Box,
+    Pagination,
+    Typography,
+} from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { Typography } from '@mui/material';
-
-import './UpdaterEquipment.css';
 
 const UpdaterEquipment = () => {
     const [equipmentList, setEquipmentList] = useState([]);
@@ -55,12 +65,10 @@ const UpdaterEquipment = () => {
         }
     };
 
-    // Calculate the current items to display
+    // Pagination logic
     const indexOfLastEquipment = currentPage * itemsPerPage;
     const indexOfFirstEquipment = indexOfLastEquipment - itemsPerPage;
     const currentEquipment = filteredEquipment.slice(indexOfFirstEquipment, indexOfLastEquipment);
-
-    // Calculate total pages
     const totalPages = Math.ceil(filteredEquipment.length / itemsPerPage);
 
     const handlePageChange = (event, value) => {
@@ -69,7 +77,7 @@ const UpdaterEquipment = () => {
     };
 
     return (
-        <Box sx={{ padding: 2 }}>
+        <Box sx={{ padding: { xs: 1, sm: 2 }, bgcolor: '#f5f5f5', minHeight: '100vh' }}>
             <AppBar position="sticky" color="primary" sx={{ mb: 2 }}>
                 <Toolbar>
                     <TextField
@@ -80,71 +88,74 @@ const UpdaterEquipment = () => {
                         sx={{
                             backgroundColor: 'white',
                             borderRadius: 1,
-                            mt: { xs: 1, sm: 0 },
+                            boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
                         }}
                     />
                 </Toolbar>
             </AppBar>
 
-            <List sx={{ maxHeight: 'calc(100vh - 150px)', overflow: 'auto' }}>
+            <List sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 2 }}>
                 {currentEquipment.map((equipment) => (
                     <Card
                         key={equipment.id}
                         sx={{
-                            margin: '10px 0',
-                            padding: '10px',
-                            boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)',
-                            borderRadius: '8px',
-                            transition: 'transform 0.2s',
+                            width: { xs: '100%', sm: '48%', md: '32%' }, // Responsive widths
+                            boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)',
+                            borderRadius: '16px',
+                            transition: 'transform 0.3s, box-shadow 0.3s',
                             '&:hover': {
-                                transform: 'scale(1.02)',
+                                transform: 'translateY(-5px)',
+                                boxShadow: '0px 10px 25px rgba(0, 0, 0, 0.2)',
                             },
                         }}
                     >
-                        <ListItem>
+                        <CardContent>
                             <ListItemText
-                                primary={<Typography variant="h6">{equipment.name || 'Unnamed'}</Typography>}
+                                primary={
+                                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                                        {equipment.name || 'Unnamed'}
+                                    </Typography>
+                                }
                                 secondary={
                                     <>
-                                        <Typography variant="body2">Email: {equipment.email}</Typography>
-                                        <Typography variant="body2">Type: {equipment.type}</Typography>
-                                        <Typography variant="body2">Brand: {equipment.brand}</Typography>
-                                        <Typography variant="body2">Serial Number: {equipment.serial_number}</Typography>
+                                        <Typography variant="body2" color="textSecondary">Email: {equipment.email}</Typography>
+                                        <Typography variant="body2" color="textSecondary">Type: {equipment.type}</Typography>
+                                        <Typography variant="body2" color="textSecondary">Brand: {equipment.brand}</Typography>
+                                        <Typography variant="body2" color="textSecondary">Serial Number: {equipment.serial_number}</Typography>
                                     </>
                                 }
                             />
-                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
                                 <IconButton
                                     onClick={() =>
                                         navigate(`/admin-dashboard/update-equipment/view-equipment/${equipment.serial_number}`)
                                     }
                                 >
-                                    <VisibilityIcon />
+                                    <VisibilityIcon color="primary" />
                                 </IconButton>
                                 <IconButton onClick={() => navigate(`/admin-dashboard/update-equipment/update-equipment/${equipment.id}`)}>
-                                    <EditIcon />
+                                    <EditIcon color="secondary" />
                                 </IconButton>
                                 <IconButton onClick={() => handleDelete(equipment.id)}>
-                                    <DeleteIcon color="error" />
+                                    <DeleteIcon sx={{ color: 'red' }} />
                                 </IconButton>
                             </Box>
-                        </ListItem>
+                        </CardContent>
                     </Card>
                 ))}
             </List>
 
-            {/* Pagination Component */}
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+            {/* Pagination */}
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                 <Pagination
                     count={totalPages}
                     page={currentPage}
                     onChange={handlePageChange}
                     variant="outlined"
                     shape="rounded"
-                    size="small"
                     sx={{
                         '& .MuiPaginationItem-root': {
-                            fontSize: { xs: '0.8rem', sm: '1rem' }, // Smaller size for mobile
+                            fontSize: { xs: '0.8rem', sm: '1rem' },
                         },
                     }}
                 />

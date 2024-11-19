@@ -41,14 +41,26 @@ const RegisterEquipment = () => {
         screenBrand: "",
         screenSerialNumber: "",
         inventoryNumberEcr: "",
-        status: "",
+        status: "Available", // Default status value
         inventoryNumberLpt: "",
     });
 
     const typeOptions = [
-        "imprimante", "avaya", "point d’access", "switch", "DVR", "TV",
-        "scanner", "routeur", "balanceur", "standard téléphonique",
-        "data show", "desktop", "laptop",
+        'Imprimante',
+        'Avaya',
+        'Point d’access',
+        'Switch',
+        'DVR',
+        'TV',
+        'Scanner',
+        'Routeur',
+        'Balanceur',
+        'Standard Téléphonique',
+        'Data Show',
+        'Desktop',
+        'Laptop',
+        'laptop',
+        'Notebook'
     ];
 
     const handleChange = (e) => {
@@ -112,7 +124,7 @@ const RegisterEquipment = () => {
                 screenBrand: "",
                 screenSerialNumber: "",
                 inventoryNumberEcr: "",
-                status: "",
+                status: "Available", // Reset status to default
                 inventoryNumberLpt: "",
             });
             setIsWirelessMouse(false);
@@ -201,7 +213,12 @@ const RegisterEquipment = () => {
                         </>
                     )}
 
-                    <input type="text" name="status" placeholder="Status" onChange={handleChange} required />
+                    {/* Dropdown for Status */}
+                    <select name="status" onChange={handleChange} value={formData.status} required>
+                        <option value="Available">Available</option>
+                        <option value="Affected">Affected</option>
+                    </select>
+
                     <input type="text" name="inventoryNumberLpt" placeholder="Inventory Number LPT" onChange={handleChange} required />
 
                     <button type="submit" disabled={isLoading}>

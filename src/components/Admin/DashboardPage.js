@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchDashboardData } from '../Charts/data/fetchDashboardData';
 import fetchEquipmentData from '../Charts/data/fetchEquipmentData';
-import fetchStatusData from '../Charts/data/fetchStatusData';
 import EquipmentTypePieChart from '../Charts/EquipmentTypePieChart';
 import StatusBarChart from '../Charts/StatusBarChart';
 import RequesterBarChart from '../Charts/RequesterBarChart';
@@ -9,84 +8,88 @@ import RequestsChart from '../Charts/RequestsChart';
 import DashboardCards from '../DashboardCards/DashboardCards';
 import EquipmentMap from '../EquipmentMap/EquipmentMapPage';
 import { Box, Typography, Paper, Grid, Snackbar, Alert } from '@mui/material';
-import { collection, query, onSnapshot, where, getDocs } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 
 const DashboardPage = () => {
+    const [defaultChartData, setDefaultChartData] = useState({});
     const [chartData, setChartData] = useState({});
     const [statusData, setStatusData] = useState({});
     const [requesterData, setRequesterData] = useState({});
-    const [selectedType, setSelectedType] = useState(null);
-    const [showNotification, setShowNotification] = useState(false); 
-    const [notificationMessage, setNotificationMessage] = useState(''); 
-    const [existingRequestIds, setExistingRequestIds] = useState(new Set());
+    const [selectedType, setSelectedType] = useState(null); // selected equipment type
+    const [selectedSites, setSelectedSites] = useState([]); // selected sites on map
+    const [showNotification, setShowNotification] = useState(false);
+    const [notificationMessage, setNotificationMessage] = useState('');
 
-    // Fetch initial data for all charts
     const fetchInitialData = async () => {
         const dashboardData = await fetchDashboardData();
         const equipmentData = await fetchEquipmentData();
 
+        setDefaultChartData(equipmentData);
         setChartData(equipmentData);
         setStatusData(dashboardData.statusCounts);
         setRequesterData(dashboardData.requesterCounts);
     };
 
-    // Real-time listener for new pending requests
-    useEffect(() => {
-        const q = query(
-            collection(db, 'equipmentRequests'),
-            where('status', '==', 'Pending')
-        );
+    // Fetch filtered data based on the selected type and selected sites
+    const fetchFilteredData = async (type) => {
+        const filteredEquipmentData = {};
+        const filteredStatusData = {};
+        const filteredRequesterData = {};
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === 'added') {
-                    const requestData = change.doc.data();
-                    const requestId = change.doc.id;
+        // Fetch equipment data from Firestore
+        const equipmentCollection = await getDocs(collection(db, 'equipment'));
+        const equipmentRequests = await getDocs(collection(db, 'equipmentRequests'));
 
-                    // Show notification only for new requests
-                    if (!existingRequestIds.has(requestId)) {
-                        setExistingRequestIds((prev) => new Set(prev).add(requestId));
-                        setNotificationMessage(`New request from ${requestData.name} for ${requestData.equipmentType}`);
-                        setShowNotification(true);
-                    }
-                }
-            });
+        equipmentCollection.forEach((doc) => {
+            const data = doc.data();
+            const site = data.site || 'Unknown';
+            const equipmentType = data.type || 'Unknown';
+
+            // Check if the equipment matches the selected sites and type
+            const isSiteMatch = selectedSites.length === 0 || selectedSites.includes(site);
+            const isTypeMatch = !type || equipmentType === type;
+
+            // Only include equipment if site and type match (if selected)
+            if (isSiteMatch && isTypeMatch) {
+                filteredEquipmentData[equipmentType] = (filteredEquipmentData[equipmentType] || 0) + 1;
+            }
         });
 
-        return () => unsubscribe();
-    }, []);
+        // Filtering equipment requests for status and requester data
+        equipmentRequests.forEach((doc) => {
+            const data = doc.data();
+            const site = data.site || 'Unknown';
+            const equipmentType = data.equipmentType || 'Unknown';
+            const status = data.status || 'Unknown';
+            const requester = data.requester || 'Unknown';
 
-    // Fetch filtered data based on selected type
-    const fetchFilteredData = async (type) => {
-        if (!type) {
-            fetchInitialData();
-            return;
-        }
+            const isSiteMatch = selectedSites.length === 0 || selectedSites.includes(site);
+            const isTypeMatch = !type || equipmentType === type;
 
-        const filteredStatusData = await fetchStatusData(type);
-        setStatusData(filteredStatusData);
-
-        const filteredRequesterData = {};
-        const equipmentRequests = await getDocs(collection(db, 'equipmentRequests'));
-        equipmentRequests.forEach(doc => {
-            const request = doc.data();
-            if (request.equipmentType === type) {
-                const requester = request.requester || 'Unknown';
+            if (isSiteMatch && isTypeMatch) {
+                // Aggregating data for status
+                filteredStatusData[status] = (filteredStatusData[status] || 0) + 1;
+                // Aggregating data for requester
                 filteredRequesterData[requester] = (filteredRequesterData[requester] || 0) + 1;
             }
         });
 
+        // Update the state with the filtered data
+        setChartData(filteredEquipmentData);
+        setStatusData(filteredStatusData);
         setRequesterData(filteredRequesterData);
     };
 
+    // Effect to fetch initial data
     useEffect(() => {
         fetchInitialData();
     }, []);
 
+    // Effect to fetch filtered data when either selectedType or selectedSites change
     useEffect(() => {
         fetchFilteredData(selectedType);
-    }, [selectedType]);
+    }, [selectedType, selectedSites]);
 
     const handleCloseNotification = () => {
         setShowNotification(false);
@@ -115,61 +118,43 @@ const DashboardPage = () => {
                 <DashboardCards />
             </Box>
 
-            {/* Main Grid container for charts */}
-            <Grid container spacing={3} justifyContent="center">
+            <Grid container spacing={3}>
                 <Grid item xs={12} sm={6} md={3}>
-                    <Paper elevation={3} sx={{ padding: 2, textAlign: 'center', borderRadius: '8px', height: 350 }}>
-                        <Typography variant="h6" gutterBottom>
-                            Equipment Types
-                        </Typography>
-                        {Object.keys(chartData).length > 0 ? (
-                            <EquipmentTypePieChart 
-                                data={chartData} 
-                                onSectionTapped={(type) => setSelectedType(type)}
-                            />
-                        ) : (
-                            <Typography variant="body2" color="textSecondary">
-                                Loading chart data...
-                            </Typography>
-                        )}
+                    <Paper elevation={3} sx={{ padding: 2, height: 350 }}>
+                        <Typography variant="h6">Equipment Types</Typography>
+                        <EquipmentTypePieChart
+                            data={chartData}
+                            onSectionTapped={(type) => setSelectedType(type)} // Interact with piechart
+                        />
                     </Paper>
                 </Grid>
 
                 <Grid item xs={12} sm={6} md={3}>
-                    <Paper elevation={3} sx={{ padding: 2, textAlign: 'center', borderRadius: '8px', height: 350 }}>
-                        <Typography variant="h6" gutterBottom>
-                            Equipment Status
-                        </Typography>
-                        {Object.keys(statusData).length > 0 ? (
-                            <StatusBarChart data={statusData} />
-                        ) : (
-                            <Typography variant="body2" color="textSecondary">
-                                {selectedType ? "No data available for the selected type" : "Loading status data..."}
-                            </Typography>
-                        )}
+                    <Paper elevation={3} sx={{ padding: 2, height: 350 }}>
+                        <Typography variant="h6">Equipment Status</Typography>
+                        <StatusBarChart data={statusData} />
                     </Paper>
                 </Grid>
 
                 <Grid item xs={12} sm={6} md={3}>
-                    <Paper elevation={3} sx={{ padding: 2, textAlign: 'center', borderRadius: '8px', height: 350 }}>
+                    <Paper elevation={3} sx={{ padding: 2, height: 350 }}>
                         <RequesterBarChart data={requesterData} />
                     </Paper>
                 </Grid>
 
-                <Grid item xs={12} sm={6} md={6}>
-                    <Paper ffd>
-                        <RequestsChart />
+                <Grid item xs={12} sm={6} md={3}>
+                    <Paper >
+                        <RequestsChart selectedType={selectedType} /> {/* Pass selectedType */}
                     </Paper>
                 </Grid>
 
-                {/* Equipment Map */}
                 <Grid item xs={12}>
-                    <Paper elevation={3} sx={{ padding: 2, textAlign: 'center', borderRadius: '8px' }}>
-                        <Typography variant="h6" gutterBottom>
-                            Equipment Location Map
-                        </Typography>
+                    <Paper elevation={3} sx={{ padding: 2 }}>
+                        <Typography variant="h6">Equipment Location Map</Typography>
                         <Box sx={{ height: '500px', width: '100%' }}>
-                            <EquipmentMap />
+                            <EquipmentMap
+                                onSiteSelection={(sites) => setSelectedSites(sites)} // Update selected sites when map selection changes
+                            />
                         </Box>
                     </Paper>
                 </Grid>

@@ -14,6 +14,7 @@ import { auth, db } from '../../firebaseConfig';
 import { signOut } from 'firebase/auth';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { useTheme, useMediaQuery } from '@mui/material';
+import { icon } from 'leaflet';
 
 const NavBar = () => {
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -94,6 +95,7 @@ const NavBar = () => {
         { label: 'New Request', icon: <NewReleasesIcon />, index: 5 },
         { label: 'Scan QR Code', icon: <QrCodeScannerIcon />, index: 6 },
         { label: 'Log Out', icon: <LogoutIcon />, action: handleLogout, color: 'error' },
+
     ];
 
     return (
@@ -160,6 +162,7 @@ const NavBar = () => {
                         <MenuItem onClick={() => handleHistoryOptionClick('/admin-dashboard/history/current-site')}>
                             Current Site
                         </MenuItem>
+
                     </Menu>
                 </>
             ) : (

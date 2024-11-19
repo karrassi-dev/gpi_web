@@ -51,7 +51,7 @@ const RequestsPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 25;
 
-    const equipmentTypes = ['Imprimante', 'Avaya', 'Point d’access', 'Switch', 'DVR', 'TV', 'Scanner', 'Routeur', 'Balanceur', 'Standard Téléphonique', 'Data Show', 'Desktop', 'Laptop','laptop','Notebook','VMware'];
+    const equipmentTypes = ['Imprimante', 'Avaya', 'Point d’access', 'Switch', 'DVR', 'TV', 'Scanner', 'Routeur', 'Balanceur', 'Standard Téléphonique', 'Data Show', 'Desktop', 'Laptop', 'Notebook', 'VMware'];
 
     useEffect(() => {
         fetchRequests();
@@ -68,18 +68,18 @@ const RequestsPage = () => {
             id: doc.id,
             ...doc.data(),
         }));
-    
+
         const filteredData = requestData.filter((request) => {
             const { isRead, isAssigned, equipmentType } = filters;
-    
+
             const matchesReadStatus = isRead === null || request.isRead === isRead;
-            const matchesAssignedStatus = 
+            const matchesAssignedStatus =
                 isAssigned === null || (request.isAssigned === isAssigned || (isAssigned === false && !request.isAssigned));
             const matchesEquipmentType = equipmentType === null || request.equipmentType === equipmentType;
-    
+
             return matchesReadStatus && matchesAssignedStatus && matchesEquipmentType;
         });
-    
+
         setRequests(filteredData);
         setLoading(false);
     };
@@ -97,16 +97,21 @@ const RequestsPage = () => {
     };
 
     const fetchAvailableEquipment = async (type) => {
-        const equipmentQuery = query(
-            collection(db, 'equipment'),
-            where('type', '==', type)
-        );
-        const equipmentSnapshot = await getDocs(equipmentQuery);
-        const equipmentList = equipmentSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-        }));
-        setAvailableEquipment(equipmentList);
+        try {
+            const equipmentQuery = query(
+                collection(db, 'equipment'),
+                where('type', '==', type),
+                where('status', '==', 'Available') // Only fetch equipment with status "Available"
+            );
+            const equipmentSnapshot = await getDocs(equipmentQuery);
+            const equipmentList = equipmentSnapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+            setAvailableEquipment(equipmentList);
+        } catch (error) {
+            console.error("Error fetching available equipment:", error);
+        }
     };
 
     const handleAssign = async () => {
@@ -116,12 +121,15 @@ const RequestsPage = () => {
         try {
             const equipmentDoc = await getDoc(doc(db, 'equipment', selectedEquipment));
             const equipmentData = equipmentDoc.data();
+    
+            // Safely retrieve previousAdmin or set a default value
+            const previousAdmin = equipmentData?.assignedBy || 'Unknown';
             const previousUser = equipmentData?.user || 'No previous user';
             const lastAssignedDate = equipmentData?.lastAssignedDate || null;
-            const previousAdmin = equipmentData?.assignedBy || 'Unknown';
             const requestData = selectedRequest;
             const site = requestData.site;
     
+            // Update the equipment request document
             await updateDoc(doc(db, 'equipmentRequests', selectedRequest.id), {
                 assignedEquipment: selectedEquipment,
                 assignedEquipmentDetails: {
@@ -136,16 +144,19 @@ const RequestsPage = () => {
                 isRead: true,
             });
     
+            // Update the equipment document with the new user, department, and status
             await updateDoc(doc(db, 'equipment', selectedEquipment), {
                 user: requestData.utilisateur,
                 department: requestData.department,
                 site,
                 assignedBy: auth.currentUser?.email,
                 lastAssignedDate: now,
+                status: 'Affected', // Change status to "Affected"
             });
     
+            // Update the history document if there's a last assigned date
             if (lastAssignedDate) {
-                const durationInDays = now.toDate().getDate() - lastAssignedDate.toDate().getDate();
+                const durationInDays = Math.floor((now.toDate() - lastAssignedDate.toDate()) / (1000 * 60 * 60 * 24));
                 await setDoc(
                     doc(db, 'HistoryOfEquipment', equipmentData.serial_number),
                     {
@@ -161,15 +172,19 @@ const RequestsPage = () => {
                 );
             }
     
+            // Close the dialog and refresh the requests
             setAssignDialogOpen(false);
             setAssignmentSuccess(true);
             fetchRequests();
+    
+            // Reset the success alert after 3 seconds
             setTimeout(() => setAssignmentSuccess(false), 3000);
         } catch (error) {
             console.error("Error assigning equipment:", error);
         }
     };
-
+    
+    
     const handlePageChange = (event, page) => {
         setCurrentPage(page);
     };
@@ -342,8 +357,6 @@ const RequestsPage = () => {
                 <Alert severity="success" sx={{ mt: 2 }}>
                     Equipment assigned successfully!
                 </Alert>
-
-                
             )}
         </Box>
     );
