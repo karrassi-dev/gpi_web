@@ -1,15 +1,14 @@
-// src/components/Admin/UpdaterEquipment.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../firebaseConfig';
-import { collection, query, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, onSnapshot, deleteDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth'; // Import Firebase Authentication
 import {
     TextField,
     Card,
     CardContent,
     IconButton,
     List,
-    ListItem,
     ListItemText,
     AppBar,
     Toolbar,
@@ -28,6 +27,8 @@ const UpdaterEquipment = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(25); // Items per page
     const navigate = useNavigate();
+    const auth = getAuth(); // Initialize Firebase Authentication
+    const currentUser = auth.currentUser; // Get the current user
 
     useEffect(() => {
         const equipmentRef = collection(db, 'equipment');
@@ -58,10 +59,30 @@ const UpdaterEquipment = () => {
         setCurrentPage(1); // Reset to first page on search
     };
 
-    const handleDelete = async (id) => {
+    const handleDelete = async (id, equipment) => {
+        if (!currentUser) {
+            alert('You must be logged in to delete equipment.');
+            return;
+        }
+
         if (window.confirm('Are you sure you want to delete this equipment?')) {
-            await deleteDoc(doc(db, 'equipment', id));
-            alert('Equipment deleted successfully');
+            try {
+                // Move the document to the recycle_bin collection
+                const recycleBinRef = doc(db, 'recycle_bin', equipment.serial_number);
+                await setDoc(recycleBinRef, {
+                    ...equipment,
+                    Deleted_By: currentUser.email, // Use the authenticated user's email
+                    Deleted_Date: serverTimestamp(),
+                });
+
+                // Delete the document from the equipment collection
+                await deleteDoc(doc(db, 'equipment', id));
+
+                alert('Equipment moved to recycle bin successfully');
+            } catch (error) {
+                console.error('Error moving to recycle bin: ', error);
+                alert('Failed to move equipment to recycle bin. Try again later.');
+            }
         }
     };
 
@@ -136,7 +157,7 @@ const UpdaterEquipment = () => {
                                 <IconButton onClick={() => navigate(`/admin-dashboard/update-equipment/update-equipment/${equipment.id}`)}>
                                     <EditIcon color="secondary" />
                                 </IconButton>
-                                <IconButton onClick={() => handleDelete(equipment.id)}>
+                                <IconButton onClick={() => handleDelete(equipment.id, equipment)}>
                                     <DeleteIcon sx={{ color: 'red' }} />
                                 </IconButton>
                             </Box>

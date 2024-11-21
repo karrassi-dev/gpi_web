@@ -3,20 +3,7 @@ import { db } from "../../firebaseConfig";
 import { setDoc, doc, serverTimestamp } from "firebase/firestore";
 import { QRCodeCanvas } from "qrcode.react";
 import html2canvas from "html2canvas";
-import CryptoJS from "crypto-js";
 import "./RegisterEquipment.css";
-
-// Encryption constants
-const ENCRYPTION_KEY = 'S3cur3P@ssw0rd123!';
-const IV = '16-Bytes---IVKey';
-
-// Function to encrypt data using AES with CBC mode
-const encryptData = (data) => {
-    const key = CryptoJS.enc.Utf8.parse(CryptoJS.MD5(ENCRYPTION_KEY).toString());
-    const iv = CryptoJS.enc.Utf8.parse(IV);
-    const encrypted = CryptoJS.AES.encrypt(data, key, { iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
-    return encrypted.toString();
-};
 
 const RegisterEquipment = () => {
     const [qrData, setQrData] = useState(null);
@@ -32,7 +19,7 @@ const RegisterEquipment = () => {
         user: "",
         brand: "",
         reference: "",
-        serial_number: "", // This will be used as the document ID
+        serial_number: "", // This will be used as the document ID and QR data
         processor: "",
         os: "",
         ram: "",
@@ -46,21 +33,21 @@ const RegisterEquipment = () => {
     });
 
     const typeOptions = [
-        'Imprimante',
-        'Avaya',
-        'Point d’access',
-        'Switch',
-        'DVR',
-        'TV',
-        'Scanner',
-        'Routeur',
-        'Balanceur',
-        'Standard Téléphonique',
-        'Data Show',
-        'Desktop',
-        'Laptop',
-        'laptop',
-        'Notebook'
+        "Imprimante",
+        "Avaya",
+        "Point d’access",
+        "Switch",
+        "DVR",
+        "TV",
+        "Scanner",
+        "Routeur",
+        "Balanceur",
+        "Standard Téléphonique",
+        "Data Show",
+        "Desktop",
+        "Laptop",
+        "laptop",
+        "Notebook",
     ];
 
     const handleChange = (e) => {
@@ -74,36 +61,41 @@ const RegisterEquipment = () => {
         // Check required fields
         const requiredFields = ["startTime", "endTime", "email", "name", "type", "user", "brand", "reference", "serial_number", "processor", "os", "ram", "storage", "status", "inventoryNumberLpt"];
         const missingRequiredField = requiredFields.some((field) => !formData[field]);
-        
+
         // Conditionally check additional fields
-        const missingAdditionalFields = isAdditionalFieldsVisible &&
+        const missingAdditionalFields =
+            isAdditionalFieldsVisible &&
             (!formData.externalScreen || !formData.screenBrand || !formData.screenSerialNumber || !formData.inventoryNumberEcr);
 
         if (missingRequiredField || missingAdditionalFields) {
             alert("Please fill in all required fields.");
             return;
         }
-        
+
         setIsLoading(true);
         try {
             // Prepare equipment data
-            const equipmentData = { ...formData, documentId: formData.serial_number, storage: formData.storage, wirelessMouse: isWirelessMouse ? "Yes" : "No" };
+            const equipmentData = {
+                ...formData,
+                documentId: formData.serial_number,
+                storage: formData.storage,
+                wirelessMouse: isWirelessMouse ? "Yes" : "No",
+            };
 
-            // Generate and encrypt the QR data
-            const generatedQRData = JSON.stringify(equipmentData);
-            const encryptedQRData = encryptData(generatedQRData);
+            // Set the QR data as the plain serial number
+            const generatedQRData = formData.serial_number;
 
-            console.log("Generated encrypted QR data:", encryptedQRData); // Log encrypted data
+            console.log("Generated QR Data (Plain):", generatedQRData); // Log plain QR data
 
-            // Save to Firestore with the encrypted QR data
+            // Save to Firestore
             const docRef = doc(db, "equipment", formData.serial_number);
             await setDoc(docRef, {
                 ...equipmentData,
                 timestamp: serverTimestamp(),
-                qr_data: encryptedQRData, // Store encrypted QR data
+                qr_data: generatedQRData, // Store plain QR data
             });
-            
-            setQrData(encryptedQRData); // Set QR data to display the encrypted QR code
+
+            setQrData(generatedQRData); // Set QR data to display the plain QR code
 
             // Clear the form fields after successful save
             setFormData({
@@ -168,7 +160,7 @@ const RegisterEquipment = () => {
                 >
                     <input type="datetime-local" name="startTime" placeholder="Start Time" onChange={handleChange} required />
                     <input type="datetime-local" name="endTime" placeholder="End Time" onChange={handleChange} required />
-                    
+
                     <input type="email" name="email" placeholder="Email" onChange={handleChange} required />
                     <input type="text" name="name" placeholder="Name" onChange={handleChange} required />
                     <select name="type" onChange={handleChange} required>
@@ -203,7 +195,7 @@ const RegisterEquipment = () => {
                             Has External Screen
                         </label>
                     )}
-                    
+
                     {isAdditionalFieldsVisible && (
                         <>
                             <input type="text" name="externalScreen" placeholder="External Screen" onChange={handleChange} required />

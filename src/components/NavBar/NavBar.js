@@ -15,6 +15,8 @@ import { signOut } from 'firebase/auth';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { useTheme, useMediaQuery } from '@mui/material';
 import { icon } from 'leaflet';
+import DeleteIcon from '@mui/icons-material/Delete'; // Import Trash icon
+
 
 const NavBar = () => {
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -30,9 +32,11 @@ const NavBar = () => {
         '/admin-dashboard/register-equipment': 1,
         '/admin-dashboard/update-equipment': 2,
         '/admin-dashboard/add-user': 3,
+        '/admin-dashboard/trash': 4, // Add Trash route
         '/admin-dashboard/new-request': 5,
         '/admin-dashboard/scan-qr-code': 6,
     };
+    
 
     const getSelectedIndex = () => {
         return pathToIndex[location.pathname] ?? 0;
@@ -92,10 +96,10 @@ const NavBar = () => {
         { label: 'Register Equipment', icon: <AddIcon />, index: 1 },
         { label: 'Update Equipment', icon: <UpdateIcon />, index: 2 },
         { label: 'Add User', icon: <PersonAddIcon />, index: 3 },
+        { label: 'Trash', icon: <DeleteIcon />, index: 4 }, // Added Trash section
         { label: 'New Request', icon: <NewReleasesIcon />, index: 5 },
         { label: 'Scan QR Code', icon: <QrCodeScannerIcon />, index: 6 },
         { label: 'Log Out', icon: <LogoutIcon />, action: handleLogout, color: 'error' },
-
     ];
 
     return (
@@ -229,5 +233,3 @@ const NavBar = () => {
 };
 
 export default NavBar;
-
-

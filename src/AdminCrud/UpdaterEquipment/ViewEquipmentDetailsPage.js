@@ -5,27 +5,6 @@ import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/fire
 import { Box, Card, Typography, Button, CircularProgress, Grid } from '@mui/material';
 import { Download as DownloadIcon, Print as PrintIcon } from '@mui/icons-material';
 import { QRCodeCanvas } from 'qrcode.react';
-import CryptoJS from 'crypto-js';
-
-// Encryption constants
-const ENCRYPTION_KEY = 'S3cur3P@ssw0rd123!';
-const IV = '16-Bytes---IVKey';
-
-// Encrypt data function
-const encryptData = (data) => {
-    const key = CryptoJS.enc.Utf8.parse(CryptoJS.MD5(ENCRYPTION_KEY).toString());
-    const iv = CryptoJS.enc.Utf8.parse(IV);
-    const encrypted = CryptoJS.AES.encrypt(data, key, { iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
-    return encrypted.toString();
-};
-
-// Decrypt function for QR data
-const decryptData = (encryptedData) => {
-    const key = CryptoJS.enc.Utf8.parse(CryptoJS.MD5(ENCRYPTION_KEY).toString());
-    const iv = CryptoJS.enc.Utf8.parse(IV);
-    const decrypted = CryptoJS.AES.decrypt(encryptedData, key, { iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
-    return decrypted.toString(CryptoJS.enc.Utf8);
-};
 
 // Filter required fields
 const filterFields = (data, fields) => {
@@ -49,7 +28,7 @@ const ViewEquipmentDetailsPage = () => {
     ];
 
     useEffect(() => {
-        const fetchAndEncryptData = async () => {
+        const fetchDataAndGenerateQrCode = async () => {
             setLoading(true);
             try {
                 const equipmentQuery = query(collection(db, 'equipment'), where('serial_number', '==', equipmentId));
@@ -61,17 +40,17 @@ const ViewEquipmentDetailsPage = () => {
 
                     const filteredData = filterFields({ ...data, document_id: docRef.id }, requiredFields);
 
-                    // Check if the stored QR data matches the current data
-                    const currentPlainData = JSON.stringify(filteredData);
-                    const encryptedQRData = encryptData(currentPlainData);
+                    // Use plain serial_number for qr_data
+                    const serialNumber = filteredData.serial_number;
+                    console.log("QR Data (Plain Serial Number):", serialNumber);
 
-                    if (data.qr_data !== encryptedQRData) {
-                        // Update the QR data if it has changed
-                        await updateDoc(doc(db, 'equipment', docRef.id), { qr_data: encryptedQRData });
+                    // Update the QR data if it doesn't match the stored value
+                    if (data.qr_data !== serialNumber) {
+                        await updateDoc(doc(db, 'equipment', docRef.id), { qr_data: serialNumber });
                     }
 
-                    // Set state with encrypted QR data
-                    setEquipmentData({ ...filteredData, qr_data: encryptedQRData });
+                    // Set state with the filtered equipment data and qr_data
+                    setEquipmentData({ ...filteredData, qr_data: serialNumber });
                 } else {
                     setEquipmentData(null);
                 }
@@ -82,7 +61,7 @@ const ViewEquipmentDetailsPage = () => {
             }
         };
 
-        fetchAndEncryptData();
+        fetchDataAndGenerateQrCode();
     }, [equipmentId]);
 
     const downloadQRCode = () => {

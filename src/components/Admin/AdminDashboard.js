@@ -15,6 +15,7 @@ import EquipmentTypePieChart from '../Charts/EquipmentTypePieChart'
 import EquipmentCurrentUserPage from '../../AdminCrud/EquipmentCurrentUser/EquipmentCurrentUserPage'
 import SiteCurrentEquipmentPge from '../../AdminCrud/SiteCurrentEquipment/SiteCurrentEquipmentPge'
 import "./AdminDashboard.css";
+import Trash from '../Trash/Trash';
 
 const AdminDashboard = () => {
     return (
@@ -37,6 +38,7 @@ const AdminDashboard = () => {
                     <Route path="update-equipment/update-equipment/:equipmentId" element={<UpdateSpecificEquipmentPage />} /> 
                     <Route path="new-request" element={<RequestsPage />} /> 
                     <Route path="scan-qr-code" element={<QrScanner />} /> 
+                    <Route path="trash" element={<Trash />} /> 
                 </Routes>
             </div>
         </div>
