@@ -57,6 +57,17 @@ const UpdateSpecificEquipmentPage = () => {
         'moyens généraux', 'GRC', 'production', 'comptabilité', 'achat', 'audit'
     ];
 
+    const siteOptions = [
+        'Agence Oujda', 'Agence Agadir', 'Agence Marrakech', 'Canal Food',
+        'Agence Beni Melal', 'Agence El Jadida', 'Agence Fes', 'Agence Tanger',
+        'BMZ', 'STLZ', 'Zine Céréales', 'Manafid Al Houboub', 'CALZ', 'LGMZL',
+        'LGSZ', 'LGMZB', 'LGMC', 'Savola', 'Siège'
+    ];
+
+    const statusOptions = ["Available", "en_maintenance", "in_service"]
+
+    const brandOptions = ['HP', 'asus', 'toshiba', 'MacBook'];
+
     useEffect(() => {
         const fetchEquipmentData = async () => {
             try {
@@ -113,12 +124,46 @@ const UpdateSpecificEquipmentPage = () => {
         <Box padding={2}>
             {equipmentData ? (
                 <>
-                    <TextField name="start_time" label="Date de debut" value={equipmentData.start_time || ''} onChange={handleChange} fullWidth margin="normal" />
-                    <TextField name="end_time" label="Date de fin" value={equipmentData.end_time || ''} onChange={handleChange} fullWidth margin="normal" />
+                    <TextField
+                        name="start_time"
+                        label="Date de debut"
+                        type="datetime-local"
+                        value={equipmentData.start_time || ''}
+                        onChange={handleChange}
+                        fullWidth
+                        margin="normal"
+                    />
+
+                    <TextField
+                        name="end_time"
+                        label="Date de fin"
+                        type="datetime-local"
+                        value={equipmentData.end_time || ''}
+                        onChange={handleChange}
+                        fullWidth
+                        margin="normal"
+                    />
+
                     <TextField name="email" label="Address de messagerie" value={equipmentData.email || ''} onChange={handleChange} fullWidth margin="normal" />
                     <TextField name="name" label="Name" value={equipmentData.name || ''} onChange={handleChange} fullWidth margin="normal" />
-                    <TextField name="site" label="Site" value={equipmentData.site || ''} onChange={handleChange} fullWidth margin="normal" />
                     
+                    {/* Site Dropdown */}
+                    <TextField
+                        name="site"
+                        label="Site"
+                        value={equipmentData.site || ''}
+                        onChange={handleChange}
+                        select
+                        fullWidth
+                        margin="normal"
+                    >
+                        {siteOptions.map((site) => (
+                            <MenuItem key={site} value={site}>
+                                {site}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+
                     <TextField
                         name="type"
                         label="Type"
@@ -134,21 +179,30 @@ const UpdateSpecificEquipmentPage = () => {
                             </MenuItem>
                         ))}
                     </TextField>
-                    
                     <TextField name="user" label="User" value={equipmentData.user || ''} onChange={handleChange} fullWidth margin="normal" />
-                    <TextField name="brand" label="Brand" value={equipmentData.brand || ''} onChange={handleChange} fullWidth margin="normal" />
+                    {/* Brand Dropdown */}
+                    <TextField
+                        name="brand"
+                        label="Brand"
+                        value={equipmentData.brand || ''}
+                        onChange={handleChange}
+                        select
+                        fullWidth
+                        margin="normal"
+                    >
+                        {brandOptions.map((brand) => (
+                            <MenuItem key={brand} value={brand}>
+                                {brand}
+                            </MenuItem>
+                        ))}
+                    </TextField>
                     <TextField name="reference" label="Reference" value={equipmentData.reference || ''} onChange={handleChange} fullWidth margin="normal" />
-                    <TextField name="serial_number" label="Serial Number" value={equipmentData.serial_number || ''} onChange={handleChange} fullWidth margin="normal" />
+                    <TextField name="serial_number" label="Serial Number" value={equipmentData.serial_number || ''} onChange={handleChange} fullWidth margin="normal" InputProps={{ readOnly: true }} />
                     <TextField name="processor" label="Processor" value={equipmentData.processor || ''} onChange={handleChange} fullWidth margin="normal" />
                     <TextField name="os" label="Operating System" value={equipmentData.os || ''} onChange={handleChange} fullWidth margin="normal" />
                     <TextField name="ram" label="RAM" value={equipmentData.ram || ''} onChange={handleChange} fullWidth margin="normal" />
                     <TextField name="storage" label="Storage" value={equipmentData.storage || ''} onChange={handleChange} fullWidth margin="normal" />
-                    <TextField name="wireless_mouse" label="Wireless Mouse" value={equipmentData.wireless_mouse || ''} onChange={handleChange} fullWidth margin="normal" />
-                    <TextField name="external_screen" label="External Screen" value={equipmentData.external_screen || ''} onChange={handleChange} fullWidth margin="normal" />
-                    <TextField name="screen_brand" label="Screen Brand" value={equipmentData.screen_brand || ''} onChange={handleChange} fullWidth margin="normal" />
-                    <TextField name="screen_serial_number" label="Screen Serial Number" value={equipmentData.screen_serial_number || ''} onChange={handleChange} fullWidth margin="normal" />
-                    <TextField name="inventory_number_ecr" label="Inventory Number ECR" value={equipmentData.inventory_number_ecr || ''} onChange={handleChange} fullWidth margin="normal" />
-                    
+
                     <TextField
                         name="department"
                         label="Department"
@@ -164,10 +218,14 @@ const UpdateSpecificEquipmentPage = () => {
                             </MenuItem>
                         ))}
                     </TextField>
-                    
-                    <TextField name="status" label="Status" value={equipmentData.status || ''} onChange={handleChange} fullWidth margin="normal" />
+                    <TextField name="status" label="Status" value={equipmentData.status || ''} onChange={handleChange} select fullWidth margin="normal" >
+                        {statusOptions.map((status) => (
+                            <MenuItem key={status} value={status}>
+                                {status}
+                            </MenuItem>
+                        ))}
+                    </TextField>
                     <TextField name="inventory_number_lpt" label="Inventory Number LPT" value={equipmentData.inventory_number_lpt || ''} onChange={handleChange} fullWidth margin="normal" />
-                    
                     <Button variant="contained" color="primary" onClick={handleUpdate} fullWidth sx={{ marginTop: 2 }}>
                         Save Changes
                     </Button>

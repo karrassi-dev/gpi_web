@@ -245,7 +245,6 @@ const locations = [
     { name: 'LGMZB', lat: 33.4844628, lon: -7.6854808, address: 'Douar Lagwassem, Bouskoura' },
     { name: 'Savola', lat: 33.55, lon: -7.62, address: 'Rte De Marrakech, Zone Ind' },
     { name: 'Siège (Headquarters)', lat: 33.57, lon: -7.62, address: 'Lotissement La Colline II N°23, Sidi Maarouf, Casablanca, Morocco' },
-    // Add other locations as needed...
 ];
 
 const EquipmentMap = ({ onSiteSelection }) => {

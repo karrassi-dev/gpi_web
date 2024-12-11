@@ -16,10 +16,17 @@ import EquipmentCurrentUserPage from '../../AdminCrud/EquipmentCurrentUser/Equip
 import SiteCurrentEquipmentPge from '../../AdminCrud/SiteCurrentEquipment/SiteCurrentEquipmentPge'
 import "./AdminDashboard.css";
 import Trash from '../Trash/Trash';
+import { styled } from '@mui/system';
 
+
+const Container = styled('div')(() => ({
+    padding: '20px',
+    backgroundColor: '#f0f2f5',
+    minHeight: '100vh',
+}));
 const AdminDashboard = () => {
     return (
-        <div>
+        <Container>
             <NavBar />
             <div className="content-wrapper">
                 <Routes>
@@ -41,7 +48,7 @@ const AdminDashboard = () => {
                     <Route path="trash" element={<Trash />} /> 
                 </Routes>
             </div>
-        </div>
+        </Container>
     );
 };
 

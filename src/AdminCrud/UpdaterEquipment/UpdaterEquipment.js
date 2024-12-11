@@ -56,7 +56,7 @@ const UpdaterEquipment = () => {
                 equipment.serial_number?.toLowerCase().includes(query)
             )
         );
-        setCurrentPage(1); // Reset to first page on search
+        setCurrentPage(1); 
     };
 
     const handleDelete = async (id, equipment) => {
@@ -86,7 +86,7 @@ const UpdaterEquipment = () => {
         }
     };
 
-    // Pagination logic
+
     const indexOfLastEquipment = currentPage * itemsPerPage;
     const indexOfFirstEquipment = indexOfLastEquipment - itemsPerPage;
     const currentEquipment = filteredEquipment.slice(indexOfFirstEquipment, indexOfLastEquipment);
@@ -94,7 +94,7 @@ const UpdaterEquipment = () => {
 
     const handlePageChange = (event, value) => {
         setCurrentPage(value);
-        window.scrollTo(0, 0); // Scroll to top when page changes
+        window.scrollTo(0, 0); 
     };
 
     return (

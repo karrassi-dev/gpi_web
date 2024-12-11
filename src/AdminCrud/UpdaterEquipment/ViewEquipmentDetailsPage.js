@@ -205,6 +205,7 @@ const ViewEquipmentDetailsPage = () => {
             ) : (
                 <Typography variant="body1" color="textSecondary" align="center" marginTop={5}>
                     No equipment data found.
+
                 </Typography>
             )}
         </Box>

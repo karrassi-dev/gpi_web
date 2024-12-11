@@ -124,7 +124,7 @@ const DashboardPage = () => {
                         <Typography variant="h6">Equipment Types</Typography>
                         <EquipmentTypePieChart
                             data={chartData}
-                            onSectionTapped={(type) => setSelectedType(type)} // Interact with piechart
+                            onSectionTapped={(type) => setSelectedType(type)} 
                         />
                     </Paper>
                 </Grid>
@@ -153,7 +153,7 @@ const DashboardPage = () => {
                         <Typography variant="h6">Equipment Location Map</Typography>
                         <Box sx={{ height: '500px', width: '100%' }}>
                             <EquipmentMap
-                                onSiteSelection={(sites) => setSelectedSites(sites)} // Update selected sites when map selection changes
+                                onSiteSelection={(sites) => setSelectedSites(sites)}
                             />
                         </Box>
                     </Paper>

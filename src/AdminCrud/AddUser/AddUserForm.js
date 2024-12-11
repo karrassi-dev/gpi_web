@@ -97,6 +97,7 @@ const AddUserForm = () => {
                 >
                     <MenuItem value="Admin">Admin</MenuItem>
                     <MenuItem value="Employee">Employee</MenuItem>
+                    <MenuItem value="Ouvrier">Ouvrier</MenuItem>
                 </TextField>
                 <TextField
                     label="Password"

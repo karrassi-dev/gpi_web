@@ -1,39 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import {
-    collection,
-    query,
-    where,
-    getDocs,
-    orderBy,
-    updateDoc,
-    doc,
-    Timestamp,
-    setDoc,
-    arrayUnion
-} from 'firebase/firestore';
-import { getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, updateDoc, doc, Timestamp, setDoc, arrayUnion, getDoc } from 'firebase/firestore';
 import { db, auth } from '../../firebaseConfig';
-import {
-    Box,
-    Typography,
-    Card,
-    CardContent,
-    CardActions,
-    Button,
-    MenuItem,
-    Select,
-    InputLabel,
-    FormControl,
-    CircularProgress,
-    IconButton,
-    Grid,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    Alert,
-    Pagination,
-} from '@mui/material';
+import { Box, Typography, Card, CardContent, CardActions, Button, MenuItem, Select, InputLabel, FormControl, CircularProgress, IconButton, Grid, Dialog, DialogActions, DialogContent, DialogTitle, Alert, Pagination, } from '@mui/material';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 
@@ -48,6 +16,8 @@ const RequestsPage = () => {
     const [availableEquipment, setAvailableEquipment] = useState([]);
     const [selectedEquipment, setSelectedEquipment] = useState('');
     const [assignmentSuccess, setAssignmentSuccess] = useState(false);
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 25;
 
@@ -101,7 +71,7 @@ const RequestsPage = () => {
             const equipmentQuery = query(
                 collection(db, 'equipment'),
                 where('type', '==', type),
-                where('status', '==', 'Available') // Only fetch equipment with status "Available"
+                where('status', '==', 'Available')
             );
             const equipmentSnapshot = await getDocs(equipmentQuery);
             const equipmentList = equipmentSnapshot.docs.map((doc) => ({
@@ -110,26 +80,26 @@ const RequestsPage = () => {
             }));
             setAvailableEquipment(equipmentList);
         } catch (error) {
-            console.error("Error fetching available equipment:", error);
+            console.error('Error fetching available equipment:', error);
         }
     };
 
+
+
     const handleAssign = async () => {
         if (!selectedRequest || !selectedEquipment) return;
-    
+
         const now = Timestamp.now();
         try {
             const equipmentDoc = await getDoc(doc(db, 'equipment', selectedEquipment));
             const equipmentData = equipmentDoc.data();
-    
-            // Safely retrieve previousAdmin or set a default value
+
             const previousAdmin = equipmentData?.assignedBy || 'Unknown';
             const previousUser = equipmentData?.user || 'No previous user';
             const lastAssignedDate = equipmentData?.lastAssignedDate || null;
             const requestData = selectedRequest;
             const site = requestData.site;
-    
-            // Update the equipment request document
+
             await updateDoc(doc(db, 'equipmentRequests', selectedRequest.id), {
                 assignedEquipment: selectedEquipment,
                 assignedEquipmentDetails: {
@@ -143,18 +113,16 @@ const RequestsPage = () => {
                 status: 'Approved',
                 isRead: true,
             });
-    
-            // Update the equipment document with the new user, department, and status
+
             await updateDoc(doc(db, 'equipment', selectedEquipment), {
                 user: requestData.utilisateur,
                 department: requestData.department,
                 site,
                 assignedBy: auth.currentUser?.email,
                 lastAssignedDate: now,
-                status: 'Affected', // Change status to "Affected"
+                status: 'Affected',
             });
-    
-            // Update the history document if there's a last assigned date
+
             if (lastAssignedDate) {
                 const durationInDays = Math.floor((now.toDate() - lastAssignedDate.toDate()) / (1000 * 60 * 60 * 24));
                 await setDoc(
@@ -171,20 +139,47 @@ const RequestsPage = () => {
                     { merge: true }
                 );
             }
-    
-            // Close the dialog and refresh the requests
+
             setAssignDialogOpen(false);
             setAssignmentSuccess(true);
             fetchRequests();
-    
-            // Reset the success alert after 3 seconds
+
             setTimeout(() => setAssignmentSuccess(false), 3000);
         } catch (error) {
-            console.error("Error assigning equipment:", error);
+            console.error('Error assigning equipment:', error);
         }
     };
-    
-    
+
+    const handleCompleteMaintenance = (request) => {
+        setSelectedRequest(request);
+        setConfirmDialogOpen(true);
+    };
+
+    const confirmCompletion = async () => {
+        if (!selectedRequest) return;
+
+        try {
+            await updateDoc(doc(db, 'equipmentRequests', selectedRequest.id), {
+                status: 'Available',
+            });
+
+            setRequests((prevRequests) =>
+                prevRequests.map((request) =>
+                    request.id === selectedRequest.id
+                        ? { ...request, status: 'Available' }
+                        : request
+                )
+            );
+
+            setSuccessMessage('Maintenance marked as complete!');
+            setConfirmDialogOpen(false);
+
+            setTimeout(() => setSuccessMessage(''), 3000);
+        } catch (error) {
+            console.error('Error updating status:', error);
+        }
+    };
+
     const handlePageChange = (event, page) => {
         setCurrentPage(page);
     };
@@ -268,25 +263,50 @@ const RequestsPage = () => {
                                             {request.name || 'Unnamed Request'}
                                         </Typography>
                                         <Typography variant="body2" color="textSecondary">
-                                            Status: <strong>{request.status || 'Pending'}</strong>
+                                            Status: <strong>{request.status}</strong>
                                         </Typography>
                                         <Typography variant="body2">
                                             Requested on: {new Date(request.requestDate.seconds * 1000).toLocaleDateString()}
                                         </Typography>
-                                        <Typography variant="body2">User: {request.utilisateur}</Typography>
-                                        <Typography variant="body2">Type: {request.equipmentType}</Typography>
+                                        <Typography variant="body2">
+                                            User: {request.utilisateur}
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            Equipment Type: {request.equipmentType}
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            Serial: {request.equipmentSerial}
+                                        </Typography>
                                     </CardContent>
                                     <CardActions sx={{ justifyContent: 'center' }}>
-                                        <Button
-                                            variant="contained"
-                                            color={request.isAssigned ? 'success' : 'primary'}
-                                            onClick={() => handleAssignDialogOpen(request)}
-                                            disabled={request.isAssigned}
-                                            sx={{ borderRadius: 2, width: '90%' }}
-                                        >
-                                            {request.isAssigned ? 'Assigned' : 'Assign Equipment'}
-                                        </Button>
+                                        {request.status === 'en_maintenance' ? (
+                                            <Button
+                                                variant="contained"
+                                                color="primary"
+                                                onClick={() => handleCompleteMaintenance(request)}
+                                                sx={{
+                                                    borderRadius: 2,
+                                                    width: '90%',
+                                                    backgroundColor: 'blue',
+                                                }}
+                                            >
+                                                Complete Maintenance
+                                            </Button>
+                                        ) : (
+                                            !request.isAssigned &&
+                                            request.status !== 'Available' && (
+                                                <Button
+                                                    variant="contained"
+                                                    color="primary"
+                                                    onClick={() => handleAssignDialogOpen(request)}
+                                                    sx={{ borderRadius: 2, width: '90%' }}
+                                                >
+                                                    Assign Equipment
+                                                </Button>
+                                            )
+                                        )}
                                     </CardActions>
+
                                 </Card>
                             </Grid>
                         ))}
@@ -327,7 +347,6 @@ const RequestsPage = () => {
                             ))}
                         </Select>
                     </FormControl>
-
                     <FormControl fullWidth variant="outlined" sx={{ mt: 2 }}>
                         <InputLabel>Select Equipment</InputLabel>
                         <Select
@@ -353,9 +372,30 @@ const RequestsPage = () => {
                 </DialogActions>
             </Dialog>
 
+            <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>
+                <DialogTitle>Confirm Maintenance Completion</DialogTitle>
+                <DialogContent>
+                    Are you sure you want to mark this maintenance request as complete?
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setConfirmDialogOpen(false)} color="primary">
+                        Cancel
+                    </Button>
+                    <Button onClick={confirmCompletion} color="primary">
+                        Confirm
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             {assignmentSuccess && (
                 <Alert severity="success" sx={{ mt: 2 }}>
                     Equipment assigned successfully!
+                </Alert>
+            )}
+
+            {successMessage && (
+                <Alert severity="success" sx={{ mt: 2 }}>
+                    {successMessage}
                 </Alert>
             )}
         </Box>
