@@ -149,13 +149,10 @@ const RegisterEquipment = () => {
             setIsAdditionalFieldsVisible(false);
         } catch (error) {
             console.error("Error registering equipment:", error);
-
-            
         } finally {
             setIsLoading(false);
         }
     };
-
     const downloadQRCode = async () => {
         const canvas = await html2canvas(document.getElementById("qrCode"));
         const image = canvas.toDataURL("image/png");
@@ -164,11 +161,9 @@ const RegisterEquipment = () => {
         link.download = "qr_code.png";
         link.click();
     };
-
     if (isUserDataLoading) {
-        return <div>Loading user data...</div>; // Show loading message until user data is fetched
+        return <div>Loading user data...</div>;
     }
-
     return (
         <div className="register-equipment">
             <h1>Register Equipment</h1>
@@ -201,13 +196,12 @@ const RegisterEquipment = () => {
                     </select>
                     <inputf
                         type="text"
-                        name="user"
+                        name="user" 
                         placeholder="User"
                         value={formData.user}  // Prefill user name
                         onChange={handleChange}
                         required
                         readOnly
-
                     />
                     <select name="brand" onChange={handleChange} required>
                         <option value="">Select Brand</option>
@@ -262,5 +256,4 @@ const RegisterEquipment = () => {
         </div>
     );
 };
-
 export default RegisterEquipment;

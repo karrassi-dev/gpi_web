@@ -4,12 +4,8 @@ import { db } from '../../firebaseConfig';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { TextField, Button, Box, CircularProgress, MenuItem, Typography } from '@mui/material';
 import CryptoJS from 'crypto-js';
-
-// Encryption constants (must match ViewEquipmentDetailsPage)
 const ENCRYPTION_KEY = 'S3cur3P@ssw0rd123!';
 const IV = '16-Bytes---IVKey';
-
-// Encryption function to match ViewEquipmentDetailsPage setup
 const encryptData = (data) => {
     const key = CryptoJS.enc.Utf8.parse(CryptoJS.MD5(ENCRYPTION_KEY).toString());
     const iv = CryptoJS.enc.Utf8.parse(IV);
@@ -19,8 +15,6 @@ const encryptData = (data) => {
         padding: CryptoJS.pad.Pkcs7
     }).toString();
 };
-
-// Filter required fields for encryption
 const filterFields = (data, equipmentId) => ({
     start_time: data.start_time || "N/A",
     end_time: data.end_time || "N/A",
@@ -38,36 +32,29 @@ const filterFields = (data, equipmentId) => ({
     document_id: equipmentId,
     storage: data.storage
 });
-
 const UpdateSpecificEquipmentPage = () => {
     const { equipmentId } = useParams();
     const navigate = useNavigate();
     const [equipmentData, setEquipmentData] = useState(null);
     const [loading, setLoading] = useState(true);
-
     const typeOptions = [
         'imprimante', 'avaya', 'point d’access', 'switch', 'DVR', 'TV', 
         'scanner', 'routeur', 'balanceur', 'standard téléphonique',
         'data show', 'desktop', 'laptop'
     ];
-
     const departmentOptions = [
         'maintenance', 'qualité', 'administration', 'commercial', 'caisse', 
         'chef d’agence', 'ADV', 'DOSI', 'DRH', 'logistique', 'contrôle de gestion',
         'moyens généraux', 'GRC', 'production', 'comptabilité', 'achat', 'audit'
     ];
-
     const siteOptions = [
         'Agence Oujda', 'Agence Agadir', 'Agence Marrakech', 'Canal Food',
         'Agence Beni Melal', 'Agence El Jadida', 'Agence Fes', 'Agence Tanger',
         'BMZ', 'STLZ', 'Zine Céréales', 'Manafid Al Houboub', 'CALZ', 'LGMZL',
         'LGSZ', 'LGMZB', 'LGMC', 'Savola', 'Siège'
     ];
-
     const statusOptions = ["Available", "en_maintenance", "in_service"]
-
     const brandOptions = ['HP', 'asus', 'toshiba', 'MacBook'];
-
     useEffect(() => {
         const fetchEquipmentData = async () => {
             try {
@@ -84,30 +71,21 @@ const UpdateSpecificEquipmentPage = () => {
                 setLoading(false);
             }
         };
-
         fetchEquipmentData();
     }, [equipmentId]);
-
     const handleUpdate = async () => {
         if (!equipmentData) return;
-
         try {
-            // Filter data and encrypt only specified fields
             const filteredData = filterFields(equipmentData, equipmentId);
             const encryptedQRData = encryptData(filteredData);
-
-            // Update Firestore with encrypted `qr_data`
             const updatedData = { ...equipmentData, qr_data: encryptedQRData };
             const equipmentRef = doc(db, 'equipment', equipmentId);
             await updateDoc(equipmentRef, updatedData);
-
-            // Navigate back after updating
             navigate('/admin-dashboard/update-equipment');
         } catch (error) {
             console.error("Error updating equipment:", error);
         }
     };
-
     const handleChange = (e) => {
         const { name, value } = e.target;
         setEquipmentData((prevData) => ({
@@ -115,11 +93,9 @@ const UpdateSpecificEquipmentPage = () => {
             [name]: value
         }));
     };
-
     if (loading) {
         return <CircularProgress />;
     }
-
     return (
         <Box padding={2}>
             {equipmentData ? (
@@ -133,7 +109,6 @@ const UpdateSpecificEquipmentPage = () => {
                         fullWidth
                         margin="normal"
                     />
-
                     <TextField
                         name="end_time"
                         label="Date de fin"
@@ -143,11 +118,8 @@ const UpdateSpecificEquipmentPage = () => {
                         fullWidth
                         margin="normal"
                     />
-
                     <TextField name="email" label="Address de messagerie" value={equipmentData.email || ''} onChange={handleChange} fullWidth margin="normal" />
                     <TextField name="name" label="Name" value={equipmentData.name || ''} onChange={handleChange} fullWidth margin="normal" />
-                    
-                    {/* Site Dropdown */}
                     <TextField
                         name="site"
                         label="Site"
@@ -163,7 +135,6 @@ const UpdateSpecificEquipmentPage = () => {
                             </MenuItem>
                         ))}
                     </TextField>
-
                     <TextField
                         name="type"
                         label="Type"
@@ -202,7 +173,6 @@ const UpdateSpecificEquipmentPage = () => {
                     <TextField name="os" label="Operating System" value={equipmentData.os || ''} onChange={handleChange} fullWidth margin="normal" />
                     <TextField name="ram" label="RAM" value={equipmentData.ram || ''} onChange={handleChange} fullWidth margin="normal" />
                     <TextField name="storage" label="Storage" value={equipmentData.storage || ''} onChange={handleChange} fullWidth margin="normal" />
-
                     <TextField
                         name="department"
                         label="Department"

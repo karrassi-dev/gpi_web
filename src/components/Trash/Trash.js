@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import {
     Grid,
@@ -19,9 +19,11 @@ import {
     Box,
 } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
+import RestoreIcon from '@mui/icons-material/Restore';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { styled } from '@mui/system';
 
-// Styled Component for 3D Card with Radius
+// Styled Card
 const StyledCard = styled(Card)(({ theme }) => ({
     position: 'relative',
     borderRadius: '15px',
@@ -33,7 +35,6 @@ const StyledCard = styled(Card)(({ theme }) => ({
     },
 }));
 
-// Styled Container
 const Container = styled('div')(() => ({
     padding: '20px',
     backgroundColor: '#f0f2f5',
@@ -42,36 +43,35 @@ const Container = styled('div')(() => ({
 
 const Trash = () => {
     const [recycleBinData, setRecycleBinData] = useState([]);
-    const [filteredData, setFilteredData] = useState([]); // For displaying filtered data
-    const [selectedItem, setSelectedItem] = useState(null); // Store selected item for the dialog
+    const [filteredData, setFilteredData] = useState([]);
+    const [selectedItem, setSelectedItem] = useState(null);
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [itemToRestore, setItemToRestore] = useState(null);
+    const [itemToDelete, setItemToDelete] = useState(null);
 
-    // Filter state
-    const [sortOrder, setSortOrder] = useState('asc'); // 'asc' or 'desc' for Deleted_Date
+    const [sortOrder, setSortOrder] = useState('asc');
     const [typeFilter, setTypeFilter] = useState('');
     const [emailFilter, setEmailFilter] = useState('');
 
-    const uniqueEmails = [...new Set(recycleBinData.map((item) => item.Deleted_By))]; // Extract unique emails
-    const uniqueTypes = [...new Set(recycleBinData.map((item) => item.type))]; // Extract unique types
+    const uniqueEmails = [...new Set(recycleBinData.map((item) => item.Deleted_By))];
+    const uniqueTypes = [...new Set(recycleBinData.map((item) => item.type))];
 
-    // Fetch data from Firestore
     useEffect(() => {
         const fetchData = async () => {
             const collectionRef = collection(db, 'recycle_bin');
             const snapshot = await getDocs(collectionRef);
             const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
             setRecycleBinData(data);
-            setFilteredData(data); // Initialize filtered data
+            setFilteredData(data);
         };
 
         fetchData();
     }, []);
 
-    // Apply Filters
     useEffect(() => {
         let data = [...recycleBinData];
-
-        // Sort by Deleted_Date
         if (sortOrder) {
             data.sort((a, b) => {
                 const dateA = a.Deleted_Date?.toDate();
@@ -79,16 +79,8 @@ const Trash = () => {
                 return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
             });
         }
-
-        // Filter by Type
-        if (typeFilter) {
-            data = data.filter((item) => item.type === typeFilter);
-        }
-
-        // Filter by Deleted_By (email)
-        if (emailFilter) {
-            data = data.filter((item) => item.Deleted_By === emailFilter);
-        }
+        if (typeFilter) data = data.filter((item) => item.type === typeFilter);
+        if (emailFilter) data = data.filter((item) => item.Deleted_By === emailFilter);
 
         setFilteredData(data);
     }, [sortOrder, typeFilter, emailFilter, recycleBinData]);
@@ -98,9 +90,62 @@ const Trash = () => {
         setDialogOpen(true);
     };
 
+    const handleRestoreDialogOpen = (item) => {
+        setItemToRestore(item);
+        setRestoreDialogOpen(true);
+    };
+
+    const handleDeleteDialogOpen = (item) => {
+        setItemToDelete(item);
+        setDeleteDialogOpen(true);
+    };
+
     const handleDialogClose = () => {
         setDialogOpen(false);
         setSelectedItem(null);
+    };
+
+    const handleRestoreDialogClose = () => {
+        setRestoreDialogOpen(false);
+        setItemToRestore(null);
+    };
+
+    const handleDeleteDialogClose = () => {
+        setDeleteDialogOpen(false);
+        setItemToDelete(null);
+    };
+
+    const handleRestore = async () => {
+        if (itemToRestore) {
+            try {
+                const equipmentRef = doc(db, 'equipment', itemToRestore.id);
+                await setDoc(equipmentRef, itemToRestore);
+
+                const recycleBinRef = doc(db, 'recycle_bin', itemToRestore.id);
+                await deleteDoc(recycleBinRef);
+
+                setRecycleBinData((prev) => prev.filter((data) => data.id !== itemToRestore.id));
+                setFilteredData((prev) => prev.filter((data) => data.id !== itemToRestore.id));
+            } catch (error) {
+                console.error('Error restoring item:', error);
+            }
+        }
+        handleRestoreDialogClose();
+    };
+
+    const handleDelete = async () => {
+        if (itemToDelete) {
+            try {
+                const recycleBinRef = doc(db, 'recycle_bin', itemToDelete.id);
+                await deleteDoc(recycleBinRef);
+
+                setRecycleBinData((prev) => prev.filter((data) => data.id !== itemToDelete.id));
+                setFilteredData((prev) => prev.filter((data) => data.id !== itemToDelete.id));
+            } catch (error) {
+                console.error('Error deleting item:', error);
+            }
+        }
+        handleDeleteDialogClose();
     };
 
     return (
@@ -108,28 +153,17 @@ const Trash = () => {
             <Typography variant="h4" gutterBottom>
                 Recycle Bin
             </Typography>
-
-            {/* Filters */}
             <Box display="flex" justifyContent="space-between" marginBottom={3}>
-                {/* Sort by Deleted_Date */}
                 <FormControl style={{ minWidth: 150 }}>
                     <InputLabel>Sort By Date</InputLabel>
-                    <Select
-                        value={sortOrder}
-                        onChange={(e) => setSortOrder(e.target.value)}
-                    >
+                    <Select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
                         <MenuItem value="asc">Ascending</MenuItem>
                         <MenuItem value="desc">Descending</MenuItem>
                     </Select>
                 </FormControl>
-
-                {/* Filter by Type */}
                 <FormControl style={{ minWidth: 150 }}>
                     <InputLabel>Filter By Type</InputLabel>
-                    <Select
-                        value={typeFilter}
-                        onChange={(e) => setTypeFilter(e.target.value)}
-                    >
+                    <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
                         <MenuItem value="">All Types</MenuItem>
                         {uniqueTypes.map((type) => (
                             <MenuItem key={type} value={type}>
@@ -138,14 +172,9 @@ const Trash = () => {
                         ))}
                     </Select>
                 </FormControl>
-
-                {/* Filter by Deleted_By */}
                 <FormControl style={{ minWidth: 150 }}>
                     <InputLabel>Filter By Email</InputLabel>
-                    <Select
-                        value={emailFilter}
-                        onChange={(e) => setEmailFilter(e.target.value)}
-                    >
+                    <Select value={emailFilter} onChange={(e) => setEmailFilter(e.target.value)}>
                         <MenuItem value="">All Emails</MenuItem>
                         {uniqueEmails.map((email) => (
                             <MenuItem key={email} value={email}>
@@ -155,64 +184,71 @@ const Trash = () => {
                     </Select>
                 </FormControl>
             </Box>
-
-            {/* Grid of Cards */}
             <Grid container spacing={3}>
                 {filteredData.map((item) => (
                     <Grid item xs={12} sm={6} md={4} key={item.id}>
                         <StyledCard variant="outlined">
                             <CardContent>
-                                <Typography variant="h6" component="div">
-                                    {item.name}
-                                </Typography>
-                                <Typography color="textSecondary">
-                                    Serial: {item.serial_number}
-                                </Typography>
+                                <Typography variant="h6">{item.name}</Typography>
+                                <Typography color="textSecondary">Serial: {item.serial_number}</Typography>
                                 <Typography color="textSecondary">Type: {item.type}</Typography>
                                 <Typography color="textSecondary">Brand: {item.brand}</Typography>
                             </CardContent>
-                            <IconButton
-                                onClick={() => handleDetailsClick(item)}
-                                style={{ position: 'absolute', top: 10, right: 10 }}
-                            >
+                            <IconButton onClick={() => handleDetailsClick(item)} style={{ position: 'absolute', top: 10, right: 10 }}>
                                 <InfoIcon />
+                            </IconButton>
+                            <IconButton
+                                onClick={() => handleRestoreDialogOpen(item)}
+                                style={{ position: 'absolute', bottom: 10, right: 60, color: 'blue' }}
+                            >
+                                <RestoreIcon />
+                            </IconButton>
+                            <IconButton
+                                onClick={() => handleDeleteDialogOpen(item)}
+                                style={{ position: 'absolute', bottom: 10, right: 10, color: 'red' }}
+                            >
+                                <DeleteIcon />
                             </IconButton>
                         </StyledCard>
                     </Grid>
                 ))}
             </Grid>
-
-            {/* Details Dialog */}
             <Dialog open={dialogOpen} onClose={handleDialogClose} fullWidth>
                 <DialogTitle>Details</DialogTitle>
                 <DialogContent>
                     {selectedItem && (
                         <div>
-                            <Typography variant="body1">
-                                <strong>Deleted By:</strong> {selectedItem.Deleted_By}
-                            </Typography>
-                            <Typography variant="body1">
-                                <strong>Deleted Date:</strong> {selectedItem.Deleted_Date?.toDate().toString()}
-                            </Typography>
-                            <Typography variant="body1">
-                                <strong>Brand:</strong> {selectedItem.brand}
-                            </Typography>
-                            <Typography variant="body1">
-                                <strong>Serial Number:</strong> {selectedItem.serial_number}
-                            </Typography>
-                            <Typography variant="body1">
-                                <strong>Type:</strong> {selectedItem.type}
-                            </Typography>
-                            <Typography variant="body1">
-                                <strong>Name:</strong> {selectedItem.name}
-                            </Typography>
+                            <Typography variant="body1"><strong>Deleted By:</strong> {selectedItem.Deleted_By}</Typography>
+                            <Typography variant="body1"><strong>Deleted Date:</strong> {selectedItem.Deleted_Date?.toDate().toString()}</Typography>
+                            <Typography variant="body1"><strong>Brand:</strong> {selectedItem.brand}</Typography>
+                            <Typography variant="body1"><strong>Serial Number:</strong> {selectedItem.serial_number}</Typography>
+                            <Typography variant="body1"><strong>Type:</strong> {selectedItem.type}</Typography>
+                            <Typography variant="body1"><strong>Name:</strong> {selectedItem.name}</Typography>
                         </div>
                     )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleDialogClose} color="primary">
-                        Close
-                    </Button>
+                    <Button onClick={handleDialogClose} color="primary">Close</Button>
+                </DialogActions>
+            </Dialog>
+            <Dialog
+                open={restoreDialogOpen}
+                onClose={handleRestoreDialogClose}
+            >
+                <DialogTitle>Are you sure you want to restore this item?</DialogTitle>
+                <DialogActions>
+                    <Button onClick={handleRestoreDialogClose} color="secondary">Cancel</Button>
+                    <Button onClick={handleRestore} color="primary">Yes, Restore</Button>
+                </DialogActions>
+            </Dialog>
+            <Dialog
+                open={deleteDialogOpen}
+                onClose={handleDeleteDialogClose}
+            >
+                <DialogTitle>Are you sure you want to delete this item permanently?</DialogTitle>
+                <DialogActions>
+                    <Button onClick={handleDeleteDialogClose} color="secondary">Cancel</Button>
+                    <Button onClick={handleDelete} color="primary">Yes, Delete</Button>
                 </DialogActions>
             </Dialog>
         </Container>

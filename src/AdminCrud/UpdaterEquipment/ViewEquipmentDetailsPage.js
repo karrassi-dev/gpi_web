@@ -85,28 +85,39 @@ const ViewEquipmentDetailsPage = () => {
 
             const printWindow = window.open('', '_blank');
             printWindow.document.write(`
-                <html>
-                    <head>
-                        <title>${printTitle}</title>
-                        <style>
-                            body, html {
-                                display: flex;
-                                justify-content: center;
-                                align-items: center;
-                                height: 100vh;
-                                margin: 0;
-                            }
-                            img {
-                                width: 288px; 
-                                height: 288px;
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <img src="${dataUrl}" alt="QR Code" />
-                    </body>
-                </html>
-            `);
+              <html>
+    <head>
+        <title>${printTitle}</title>
+        <style>
+            @page {
+                margin: 0; /* Removes default page margins */
+            }
+            body {
+                margin: 0; /* Removes body margins */
+                width: 100%;
+                height: 100%;
+                display: flex;
+                justify-content: flex-start; /* Align content to the top */
+                align-items: flex-start; /* Align content to the left */
+                position: relative;
+                font-size: 0; /* Avoid any default spacing */
+            }
+            img {
+                position: absolute;
+                top: 0;
+                right: 0;
+                margin: 10px; /* Adds some space from the edge */
+                width: 288px;
+                height: 288px;
+            }
+        </style>
+    </head>
+    <body>
+        <img src="${dataUrl}" alt="QR Code" />
+    </body>
+</html>
+
+`);
             printWindow.document.close();
             printWindow.print();
         }
